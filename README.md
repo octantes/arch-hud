@@ -1,9 +1,10 @@
 # arch-hud
 
-arch-hud is a personal build of suckless tools for daily use on Arch Linux.
+arch-hud is a personal build of [suckless](https://suckless.org/) tools for daily use on Arch Linux.
 
 Built around the concept of a *heads-up display*, trying to make the computer feel like a tool again and not a cognitive black hole.
 Implements a few minimal patches (listed below) with a low tech feel based around an 8bit palette and pixel fonts.
+
 No gaps, no transparency, no compositor, **no distractions**. Do add [picom](https://github.com/yshui/picom) if you experience screen tearing.
 
 ## installed software and patches
