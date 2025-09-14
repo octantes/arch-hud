@@ -11,6 +11,8 @@ No gaps, no transparency, no compositor, **no distractions**. Do add [picom](htt
 
 To install just go into each directory and sudo make clean install (script pending).
 
+- [dunst](https://github.com/dunst-project/dunst) - simple notification daemon
+
 ### [dwm](https://dwm.suckless.org/) - tiling windows manager
 - [main monitor only statusbar](https://dwm.suckless.org/patches/mainmon/)
 - [tag to other monitors](https://dwm.suckless.org/patches/tagothermonitor/)
