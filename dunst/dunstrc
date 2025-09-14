@@ -4,7 +4,7 @@
     ### Display ###
 
     # Which monitor should the notifications be displayed on.
-    monitor = 0
+    monitor = 1
 
     # Display notification on focused monitor.  Possible modes are:
     #   mouse: follow mouse pointer
@@ -237,7 +237,7 @@
     min_icon_size = 32
 
     # Scale larger icons down to this size, set to 0 to disable
-    max_icon_size = 128
+    max_icon_size = 32
 
     # Paths to default icons (only necessary when not using recursive icon lookup)
     icon_path = /usr/share/icons/gnome/16x16/status/:/usr/share/icons/gnome/16x16/devices/
@@ -345,20 +345,20 @@
     # Otherwise the "#" and following would be interpreted as a comment.
     background = "#1A1C1C"
     foreground = "#AAABAC"
-    frame_color = "#216FD5"
+    frame_color = "#986C98"
     timeout = 10
 
 [urgency_normal]
     background = "#1A1C1C"
     foreground = "#AAABAC"
-    frame_color = "#45AF3A"
+    frame_color = "#6FAC67"
     timeout = 10
     override_pause_level = 30
 
 [urgency_critical]
     background = "#1A1C1C"
     foreground = "#AAABAC"
-    frame_color = "#FF7E25"
+    frame_color = "#985954"
     timeout = 0
     override_pause_level = 60
 
