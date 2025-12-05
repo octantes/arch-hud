@@ -1,0 +1,52 @@
+From 3c5f53d4e674c5f9c4077722f0c04688f8be1127 Mon Sep 17 00:00:00 2001
+From: bakkeby <bakkeby@gmail.com>
+Date: Mon, 26 Jul 2021 11:09:49 +0200
+Subject: [PATCH] Adding bottom tabs patch
+
+---
+ tabbed.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/tabbed.c b/tabbed.c
+index eafe28a..7fcd53c 100644
+--- a/tabbed.c
++++ b/tabbed.c
+@@ -182,7 +182,7 @@ buttonpress(const XEvent *e)
+ 	int i, fc;
+ 	Arg arg;
+ 
+-	if (ev->y < 0 || ev->y > bh)
++	if (ev->y < wh - bh)
+ 		return;
+ 
+ 	if (((fc = getfirsttab()) > 0 && ev->x < TEXTW(before)) || ev->x < 0)
+@@ -332,7 +332,7 @@ drawbar(void)
+ 		dc.w = ww;
+ 		XFetchName(dpy, win, &name);
+ 		drawtext(name ? name : "", dc.norm);
+-		XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, ww, bh, 0, 0);
++		XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, ww, bh, 0, wh - bh);
+ 		XSync(dpy, False);
+ 
+ 		return;
+@@ -371,7 +371,7 @@ drawbar(void)
+ 		dc.x += dc.w;
+ 		clients[c]->tabx = dc.x;
+ 	}
+-	XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, ww, bh, 0, 0);
++	XCopyArea(dpy, dc.drawable, win, dc.gc, 0, 0, ww, bh, 0, wh - bh);
+ 	XSync(dpy, False);
+ }
+ 
+@@ -881,7 +881,7 @@ resize(int c, int w, int h)
+ 	XWindowChanges wc;
+ 
+ 	ce.x = 0;
+-	ce.y = wc.y = bh;
++	ce.y = wc.y = 0;
+ 	ce.width = wc.width = w;
+ 	ce.height = wc.height = h;
+ 	ce.type = ConfigureNotify;
+-- 
+2.45.2
+

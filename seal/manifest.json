@@ -1,0 +1,16 @@
+{
+  "name": "shadewithseal",
+  "short_name": "seal",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#2b2c2c",
+  "theme_color": "#f88",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon",
+      "purpose": "any"
+    }
+  ]
+}
