@@ -3,7 +3,7 @@
 # to import replace results
 
 DEST_DIR="$HOME/arch-hud"
-ARCHIVE_NAME="packages.md"
+ARCHIVE_NAME="y packages.md"
 
 yay -Qent | sed 's/^/- /' > "$DEST_DIR/$ARCHIVE_NAME"
 

@@ -1,0 +1,16 @@
+{
+  "name": "trackwithslate",
+  "short_name": "slate",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#1a1c1c",
+  "theme_color": "#7ebdc4",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

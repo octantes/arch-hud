@@ -34,6 +34,8 @@ PS1='[\u@\h \W]\$ '
 
 export PATH="/home/kaste/arch-hud/crypts:$PATH"   # set scripts
 
+alias sudo='sudo env "PATH=$PATH"'                # make sudo inherit path
+
 export PATH=$PATH:/usr/local/bin                  # for dwmblocks
 export XDG_CONFIG_HOME="$HOME/.config"            # set home
 export XDG_DATA_HOME="$HOME/.config"              # set data
@@ -53,5 +55,7 @@ export NVM_DIR="$HOME/.config/nvm"
 
 export NPM_CONFIG_USERCONFIG="$HOME/.config/npm/npmrc"
 export NPM_CONFIG_CACHE="$HOME/.config/npm/cache"
+
 mkdir -p "$HOME/.config/npm"
+
 [ -f "$NPM_CONFIG_USERCONFIG" ] || touch "$NPM_CONFIG_USERCONFIG"
