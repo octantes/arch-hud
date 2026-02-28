@@ -7,6 +7,8 @@ Implements a few minimal patches (listed below) with a low tech feel based aroun
 
 No gaps, no transparency, no compositor, **no distractions**. Do add [picom](https://github.com/yshui/picom) if you experience screen tearing.
 
+![screenshot](screenshot.png)
+
 ## installed software and patches
 
 To install just go into each directory and sudo make clean install (script pending).
@@ -48,6 +50,7 @@ To install just go into each directory and sudo make clean install (script pendi
 - disk space
 - mpv (currently playing)
 
+## Keybindings
 
 | KEYMAP               | FUNCTION                                | CONTEXT       | FROM   |
 | :------------------- | :-------------------------------------- | :------------ | :----- |
