@@ -3,8 +3,8 @@
 # to import replace results
 
 CONFIG_DIR="$HOME/.config/nvim"
-DEST_DIR="/home/havitat/02/A2/archivo"
-ARCHIVE_NAME="nvim.tar"
+DEST_DIR="$HOME/arch-hud"
+ARCHIVE_NAME="x nvim.tar"
 
 tar -cf "$DEST_DIR/$ARCHIVE_NAME" -C "$CONFIG_DIR" .
 

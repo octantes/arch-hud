@@ -1,0 +1,359 @@
+#!/usr/bin/env bash
+
+# isolate - run AI tools in an isolated environment using bubblewrap
+# only allows access to this repository folder
+
+VERSION="2.0.0"
+
+set -euo pipefail
+if [[ "${TRACE-0}" == "1" ]]; then
+    set -o xtrace
+fi
+
+# Signal handling for clean termination
+trap 'exit 130' INT   # Handle Ctrl+C
+trap 'exit 143' TERM  # Handle termination
+
+# Get the current working directory
+START_DIR="$(pwd)"
+
+# Check if bubblewrap is installed
+if ! command -v bwrap &>/dev/null; then
+    echo "Error: bubblewrap (bwrap) is not installed."
+    echo "Install it with: sudo apt install bubblewrap (Ubuntu/Debian) or sudo dnf install bubblewrap (Fedora)"
+    exit 1
+fi
+
+# Tool checking will be done after argument parsing
+
+# Default tool to isolate
+ISOLATED_TOOL="opencode"
+
+# Define read-write directories for each tool
+OPENCODE_RW_DIRS=(
+    "$HOME/.local/share/opencode"
+    "$HOME/.cache/opencode"
+)
+
+CLAUDE_RW_DIRS=(
+    "$HOME/.claud"
+)
+
+CLAUDE_RW_FILES=(
+    "$HOME/.claude.json"
+)
+
+GEMINI_RW_DIRS=(
+    "$HOME/.gemini"
+)
+
+# Check if first argument is a tool name
+if [[ $# -gt 0 && ("$1" == "opencode" || "$1" == "claude" || "$1" == "gemini") ]]; then
+    ISOLATED_TOOL="$1"
+    echo "Selected tool: $ISOLATED_TOOL"
+    # Remove the tool name from arguments
+    shift
+fi
+
+# Parse command line arguments for --rw, --ro, --hide, and --docker flags
+EXTRA_MOUNTS=()
+EXTRA_TMPFS=()
+TOOL_ARGS=()
+PARSING_RW=false
+PARSING_RO=false
+PARSING_HIDE=false
+ENABLE_DOCKER=false
+DRY_RUN_MODE=false
+
+for arg in "$@"; do
+    if [[ "$arg" == "--iso-version" ]]; then
+        echo "isolate version $VERSION"
+        exit 0
+    elif [[ "$arg" == "--" ]]; then
+        # End of mount options, everything after this goes to the tool
+        PARSING_RW=false
+        PARSING_RO=false
+        PARSING_HIDE=false
+    elif [[ "$arg" == "--rw" ]]; then
+        PARSING_RW=true
+        PARSING_RO=false
+        PARSING_HIDE=false
+    elif [[ "$arg" == "--ro" ]]; then
+        PARSING_RO=true
+        PARSING_RW=false
+        PARSING_HIDE=false
+    elif [[ "$arg" == "--hide" ]]; then
+        PARSING_HIDE=true
+        PARSING_RW=false
+        PARSING_RO=false
+    elif [[ "$arg" == "--docker" ]]; then
+        ENABLE_DOCKER=true
+        PARSING_RW=false
+        PARSING_RO=false
+        PARSING_HIDE=false
+    elif [[ "$arg" == "--iso-dry-run" ]]; then
+        DRY_RUN_MODE=true
+        PARSING_RW=false
+        PARSING_RO=false
+        PARSING_HIDE=false
+    elif [[ ("$PARSING_RW" == true || "$PARSING_RO" == true || "$PARSING_HIDE" == true) && "$arg" != --* ]]; then
+        # Resolve to absolute path and validate existence
+        # Use realpath if available, fallback to readlink -f
+        if command -v realpath >/dev/null 2>&1; then
+            EXTRA_PATH="$(realpath "$arg")"
+        else
+            EXTRA_PATH="$(readlink -f "$arg")"
+        fi
+        if [[ -e "$EXTRA_PATH" ]]; then
+            # Check for conflicting mount options for the same path
+            for existing_mount in "${EXTRA_MOUNTS[@]}"; do
+                if [[ "$existing_mount" == "$EXTRA_PATH" ]]; then
+                    echo "Error: Path $EXTRA_PATH is already mounted with different options"
+                    echo "Cannot specify conflicting mount options for the same path"
+                    exit 1
+                fi
+            done
+            for existing_tmpfs in "${EXTRA_TMPFS[@]}"; do
+                if [[ "$existing_tmpfs" == "$EXTRA_PATH" ]]; then
+                    echo "Error: Path $EXTRA_PATH is already hidden with tmpfs"
+                    echo "Cannot mount and hide the same path"
+                    exit 1
+                fi
+            done
+            
+            if [[ "$PARSING_RW" == true ]]; then
+                EXTRA_MOUNTS+=("--bind" "$EXTRA_PATH" "$EXTRA_PATH")
+                echo "Adding read-write mount: $EXTRA_PATH"
+            elif [[ "$PARSING_RO" == true ]]; then
+                EXTRA_MOUNTS+=("--ro-bind" "$EXTRA_PATH" "$EXTRA_PATH")
+                echo "Adding read-only mount: $EXTRA_PATH"
+            elif [[ "$PARSING_HIDE" == true ]]; then
+                EXTRA_TMPFS+=("$EXTRA_PATH")
+                echo "Adding hidden mount (tmpfs): $EXTRA_PATH"
+            fi
+        else
+            echo "Warning: Extra path does not exist: $arg"
+            exit 1
+        fi
+    else
+        PARSING_RW=false
+        PARSING_RO=false
+        PARSING_HIDE=false
+        if [[ "$arg" != "--rw" && "$arg" != "--ro" && "$arg" != "--hide" && "$arg" != "--docker" && "$arg" != "--iso-dry-run" && "$arg" != "--" ]]; then
+            TOOL_ARGS+=("$arg")
+        fi
+    fi
+done
+
+# Define standard read-only bind mounts
+STANDARD_RO_BINDS=(
+    "/usr"
+    "/lib"
+    "/lib64"
+    "/bin"
+    "/sbin"
+    "/etc/passwd"
+    "/etc/group"
+    "/etc/nsswitch.conf"
+    "/etc/resolv.conf"
+    "/etc/ssl"
+    "/etc/ca-certificates"
+    "/usr/local/bin"
+    "$HOME"
+)
+
+# Define tmpfs directories
+# There are two reasons for a directory to be in this list:
+# - to provide a temp file system for example /tmp
+# - to hide secrets with tmpfs overlay for example $HOME/.ssh
+TMPFS_DIRS=(
+    "/tmp"
+    "/var/tmp"
+    "/run"
+    "$HOME/.aws"
+    "$HOME/.gnupg"
+    "$HOME/.ssh"
+    "$HOME/tmp"
+)
+
+# Build the ro-bind arguments array
+RO_BIND_ARGS=()
+for path in "${STANDARD_RO_BINDS[@]}"; do
+    RO_BIND_ARGS+=("--ro-bind" "$path" "$path")
+done
+
+# Detect and add Homebrew/Linuxbrew prefix if brew is available
+if command -v brew &>/dev/null; then
+    BREW_PREFIX="$(brew config 2>/dev/null | grep "HOMEBREW_PREFIX:" | cut -d: -f2 | xargs)"
+    if [[ -n "$BREW_PREFIX" && -d "$BREW_PREFIX" ]]; then
+        RO_BIND_ARGS+=("--ro-bind" "$BREW_PREFIX" "$BREW_PREFIX")
+        echo "Detected Homebrew at: $BREW_PREFIX"
+    fi
+fi
+
+# Build the tmpfs arguments array for hidden directories
+TMPFS_ARGS=()
+for path in "${TMPFS_DIRS[@]}"; do
+    # Ensure the path is absolute and valid
+    if [[ "$path" != /* ]]; then
+        echo "Error: TMPFS directory path must be absolute: $path"
+        exit 1
+    elif [[ -d "$path" ]]; then
+        TMPFS_ARGS+=("--tmpfs" "$path")
+    fi
+done
+
+# Add extra tmpfs mounts from --hide option
+for path in "${EXTRA_TMPFS[@]}"; do
+    # Ensure the path is absolute (it should be since we resolved it earlier)
+    if [[ "$path" != /* ]]; then
+        echo "Error: TMPFS directory path must be absolute: $path"
+        exit 1
+    fi
+    TMPFS_ARGS+=("--tmpfs" "$path")
+done
+
+# Build the read-write bind arguments array based on the selected tool
+TOOL_BIND_ARGS=()
+if [[ "$ISOLATED_TOOL" == "opencode" ]]; then
+    for path in "${OPENCODE_RW_DIRS[@]}"; do
+        # Only add bind mount if the directory exists
+        if [[ -d "$path" ]]; then
+            TOOL_BIND_ARGS+=("--bind" "$path" "$path")
+        fi
+    done
+elif [[ "$ISOLATED_TOOL" == "claude" ]]; then
+    for path in "${CLAUDE_RW_DIRS[@]}"; do
+        if [[ -d "$path" ]]; then
+            TOOL_BIND_ARGS+=("--bind" "$path" "$path")
+        fi
+    done
+    for file in "${CLAUDE_RW_FILES[@]}"; do
+        if [[ -f "$file" ]]; then
+            TOOL_BIND_ARGS+=("--bind" "$file" "$file")
+        fi
+    done
+elif [[ "$ISOLATED_TOOL" == "gemini" ]]; then
+    for path in "${GEMINI_RW_DIRS[@]}"; do
+        if [[ -d "$path" ]]; then
+            TOOL_BIND_ARGS+=("--bind" "$path" "$path")
+        fi
+    done
+fi
+
+# Docker socket access setup
+DOCKER_ARGS=()
+if [[ "$ENABLE_DOCKER" == true ]]; then
+    DOCKER_SOCKET="/var/run/docker.sock"
+    if [[ -S "$DOCKER_SOCKET" ]]; then
+        # Check if user is in docker group
+        if ! groups | grep -q docker && [[ "$(stat -c '%G' "$DOCKER_SOCKET")" == "docker" ]]; then
+            echo "Warning: You may need to be in the 'docker' group for Docker access"
+            echo "Run: sudo usermod -aG docker $USER && logout/login"
+        fi
+        
+        DOCKER_ARGS+=("--bind" "$DOCKER_SOCKET" "$DOCKER_SOCKET")
+        echo "Docker socket access enabled: $DOCKER_SOCKET"
+
+        # Check if docker binary is available and add its directory to mounts if needed
+        if command -v docker &>/dev/null; then
+            DOCKER_PATH="$(readlink -f "$(command -v docker)")"
+            DOCKER_DIR="$(dirname "$DOCKER_PATH")"
+            # Check if docker binary directory is already mounted via standard mounts
+            DOCKER_ALREADY_MOUNTED=false
+            for standard_mount in "${STANDARD_RO_BINDS[@]}"; do
+                if [[ "$DOCKER_DIR" == "$standard_mount"* ]]; then
+                    DOCKER_ALREADY_MOUNTED=true
+                    break
+                fi
+            done
+            if [[ "$DOCKER_ALREADY_MOUNTED" == false ]]; then
+                DOCKER_ARGS+=("--ro-bind" "$DOCKER_DIR" "$DOCKER_DIR")
+                echo "Docker binary directory mounted: $DOCKER_DIR"
+            fi
+        else
+            echo "Warning: docker command not found in PATH. Docker socket is mounted but docker binary may not be accessible."
+        fi
+    else
+        echo "Error: Docker socket not found at $DOCKER_SOCKET"
+        echo "Make sure Docker is running and the socket exists."
+        exit 1
+    fi
+fi
+# Prepare the bwrap command
+declare -a bwrap_command=("bwrap" \
+    "${RO_BIND_ARGS[@]}" \
+    "${TOOL_BIND_ARGS[@]}" \
+    --bind "$START_DIR" /workspace \
+    "${EXTRA_MOUNTS[@]}" \
+    "${DOCKER_ARGS[@]}" \
+    "${TMPFS_ARGS[@]}" \
+    --proc /proc \
+    --dev /dev \
+    --unshare-all \
+    --share-net \
+    --new-session \
+    --die-with-parent \
+    --chdir /workspace \
+    $ISOLATED_TOOL "${TOOL_ARGS[@]}")
+
+# Execute or show the command if in dry-run mode
+if [[ "$DRY_RUN_MODE" == true ]]; then
+    echo "Dry Run: Displaying the bwrap command without executing it:"
+    echo "${bwrap_command[@]}"
+    exit 0
+fi
+
+# Check if the selected tool is available
+if ! command -v "$ISOLATED_TOOL" &>/dev/null; then
+    echo "Error: $ISOLATED_TOOL is not installed or not in PATH."
+    echo "Make sure $ISOLATED_TOOL is installed and accessible."
+    exit 1
+fi
+
+# Execute the command
+echo "Starting isolated $ISOLATED_TOOL session..."
+echo "Start dir: $START_DIR"
+echo "Working directory inside sandbox: /workspace"
+if [[ ${#EXTRA_MOUNTS[@]} -gt 0 ]]; then
+    echo "Extra mounts: $((${#EXTRA_MOUNTS[@]} / 3))"
+fi
+if [[ "$ENABLE_DOCKER" == true ]]; then
+    echo "Docker access: enabled"
+fi
+echo ""
+
+# Check if --help is being requested and show additional help
+for arg in "${TOOL_ARGS[@]}"; do
+    if [[ "$arg" == "--help" || "$arg" == "-h" ]]; then
+        echo "isolate script - Usage:"
+        echo "  isolate [TOOL] [OPTIONS] -- [TOOL_ARGS]"
+        echo ""
+        echo "Tools:"
+        echo "  opencode               OpenCode (default)"
+        echo "  claude                 Claude CLI"
+        echo "  gemini                 Gemini CLI"
+        echo ""
+        echo "Options:"
+        echo "  --docker               Enable Docker socket access"
+        echo "  --hide PATH [PATH ...] Hide PATH(s) with tmpfs overlay"
+        echo "  --iso-dry-run          Show the bwrap command without executing it"
+        echo "  --iso-version          Show isolate script version"
+        echo "  --ro PATH [PATH ...]   Add a read-only bind mount for PATH(s)"
+        echo "  --rw PATH [PATH ...]   Add a read-write bind mount for PATH(s)"
+        echo "  --                     End of mount options (optional)"
+        echo ""
+        echo "Examples:"
+        echo "  isolate                                    # Run opencode (default)"
+        echo "  isolate claude \"Review this code\"          # Run claude with prompt"
+        echo "  isolate gemini --docker -- \"Help me\"      # Run gemini with Docker access"
+        echo ""
+        echo "These options can be used multiple times to mount additional directories."
+        echo "Paths will be resolved to absolute paths and validated before mounting."
+        echo "Use '--' to explicitly separate mount options from tool arguments."
+        break
+    fi
+done
+
+# Run the selected tool in bubblewrap sandbox
+exec "${bwrap_command[@]}"

@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+prog=$1
+
+win=$(xdotool getactivewindow 2>/dev/null)
+
+if [ -n "$win" ] && xprop -id "$win" 2>/dev/null | grep -q '"tabbed"'; then
+
+  if [ "$prog" = surf ]; then
+    exec surf -e "$win"
+  else
+    exec st -w "$win" -e "$prog"
+  fi
+
+else
+
+  if [ "$prog" = surf ]; then
+    exec tabbed -c surf -e
+  else
+    exec tabbed -c -r 2 st -w '' -e "$prog"
+  fi
+
+fi
