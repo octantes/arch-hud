@@ -3,7 +3,7 @@
 # to import replace results
 
 CONFIG_DIR="$HOME/.config/obs-studio"
-DEST_DIR="/home/havitat/04/archivo"
+DEST_DIR="/home/havitat/04"
 ARCHIVE_NAME="02 OBS.tar"
 
 tar -cf "$DEST_DIR/$ARCHIVE_NAME" -C "$CONFIG_DIR" .

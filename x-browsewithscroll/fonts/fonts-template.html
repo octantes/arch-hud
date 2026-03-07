@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+  <meta charset="UTF-8">
+  <title>font-scroller</title>
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+
+  <style>
+
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #1b1c1c; color: #aaabac; font-family: sans-serif; }
+    #focus-viewer { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; width: 100%; text-align: center; padding: 40px; box-sizing: border-box; }
+    #lorem-text { font-size: 3rem; line-height: 1.1; max-width: 1000px; margin-bottom: 40px; transition: opacity 0.1s ease-in-out; }
+    #font-meta { border-top: 1px solid #986c98; padding-top: 20px; width: 100%; max-width: 600px; }
+    #font-name { font-family: monospace; color: #8ab6bb; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px; }
+    #index-info { color: #986c98; font-size: 0.8rem; margin-top: 10px; }
+    .loading { opacity: 0.3; }
+    .back-btn { position: fixed; top: 20px; left: 20px; color: #986c98; text-decoration: none; font-size: 0.8rem; border: 1px solid #986c98; padding: 5px 10px; border-radius: 4px; }
+
+  </style>
+
+</head>
+
+<body>
+
+  <a href="../index.html" class="back-btn">BACK</a>
+
+  <div id="focus-viewer">
+    <div id="lorem-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque nisi nulla, tempus interdum dolor quis.</div>
+    <div id="font-meta">
+      <div id="font-name">loading...</div>
+      <div id="index-info">0 / 0</div>
+    </div>
+  </div>
+
+  <script>
+
+    const fontFiles = /* DATA_PLACEHOLDER */;
+
+    const fonts = fontFiles.map((f, index) => ({ name: f, originalIndex: index + 1 }));
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    // check local storage shuffle setting before starting
+    const shouldShuffle = localStorage.getItem('shuffleAssets');
+    if (shouldShuffle === 'true' || shouldShuffle === null) { shuffle(fonts); }
+
+    let currentIndex = 0;
+    const loremElement = document.getElementById('lorem-text');
+    const nameElement = document.getElementById('font-name');
+    const indexElement = document.getElementById('index-info');
+
+    function updateView(index) {
+      const fontObj = fonts[index];
+      loremElement.classList.add('loading');
+      
+      const fontFace = new FontFace(fontObj.name, `url('${fontObj.name}')`);
+      fontFace.load().then((loadedFace) => {
+        document.fonts.add(loadedFace);
+        loremElement.style.fontFamily = `"${fontObj.name}", sans-serif`;
+        nameElement.textContent = fontObj.name;
+        indexElement.textContent = `${fontObj.originalIndex} / ${fonts.length}`;
+        loremElement.classList.remove('loading');
+      }).catch(e => {
+        nameElement.textContent = `${fontObj.name} (ERROR)`;
+        loremElement.style.fontFamily = 'sans-serif';
+        loremElement.classList.remove('loading');
+      });
+    }
+
+    window.addEventListener('wheel', (e) => {
+      if (e.deltaY > 0) { if (currentIndex < fonts.length - 1) { currentIndex++; updateView(currentIndex); } }
+      else { if (currentIndex > 0) { currentIndex--; updateView(currentIndex); } }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (['ArrowDown', 'ArrowRight'].includes(e.key)) { if (currentIndex < fonts.length - 1) { currentIndex++; updateView(currentIndex); } }
+      else if (['ArrowUp', 'ArrowLeft'].includes(e.key)) { if (currentIndex > 0) { currentIndex--; updateView(currentIndex); } }
+    });
+
+    updateView(currentIndex);
+
+  </script>
+
+</body>
+
+</html>
