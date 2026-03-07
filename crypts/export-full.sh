@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-cp ~/.bashrc    ~/arch-hud/
-cp ~/.dircolors ~/arch-hud/
-cp ~/.xinitrc   ~/arch-hud/
+cp ~/.bashrc    ~/.arch/
+cp ~/.dircolors ~/.arch/
+cp ~/.xinitrc   ~/.arch/
 
 bash export-packages.sh # A
 bash export-nvim.sh     # B
