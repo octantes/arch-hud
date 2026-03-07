@@ -20,7 +20,9 @@ static const Layout       layouts[]      = { { "[ T ]", tile    }, { "[ F ]", NU
 static const Rule         rules[]        = { { "placeholder window class",    NULL,          NULL, 0, 0, -1 } };
 static const char         *tags[]        = {   "1", "2", "3", "4", "5", "6", "7", "8", "9"                    };
 
-static const unsigned int borderpx       = 0;          /* border pixel of windows                           */
+static unsigned int gappx                = 18;         /* gap pixel between windows                         */
+static unsigned int borderpx             = 1;          /* border pixel of windows                           */
+
 static const unsigned int snap           = 32;         /* snap pixel                                        */
 static const unsigned int minwsz         = 20;         /* minimal heigt of a client for smfact              */
 static const int          showbar        = 1;          /* 0 means no bar                                    */
@@ -59,6 +61,18 @@ static const char        *smartranger[] = { "smart-tabbed", "ranger", NULL };
 static const char        *smartrmpc[]   = { "smart-tabbed", "rmpc",   NULL };
 static const char        *smartsurf[]   = { "smart-tabbed", "surf",   NULL };
 
+static void togglegaps(const Arg *arg) {
+
+	Monitor *m;
+	Client *c;
+
+	static unsigned int prev_gaps = 18;
+	if (gappx == 0) { gappx = prev_gaps; borderpx = 1; } else { prev_gaps = gappx; gappx = 0; borderpx = 0; }
+	for (m = mons; m; m = m->next) { for (c = m->clients; c; c = c->next) { c->bw = borderpx; XSetWindowBorderWidth(dpy, c->win, borderpx); } }
+	arrange(selmon);
+
+}
+
 static const Key keys[] = {
 
 	/* modifier                     key           function        argument             */
@@ -78,6 +92,7 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_s,         setlayout,      {.v = &layouts[1]}   },
 	{ MODKEY,                       XK_d,         setlayout,      {.v = &layouts[2]}   },
     { MODKEY,                       XK_f,         togglefloating, {0}                  },
+    { MODKEY,                       XK_g,         togglegaps,     {0}                  },
 
 	{ MODKEY,                       XK_z,         incnmaster,     {.i = -1 }           },
 	{ MODKEY,                       XK_x,         incnmaster,     {.i = +1 }           },
