@@ -3,7 +3,7 @@
 arch-hud is a personal build of [suckless](https://suckless.org/) tools for daily use on Arch Linux.
 
 Built around the concept of a *heads-up display*, trying to make the computer feel like a tool again and not a cognitive black hole.
-Implements a few minimal patches (listed below) with a low tech feel based around an 8bit palette and pixel fonts. No gaps, no transparency, no compositor, **no distractions**. Do add [picom](https://github.com/yshui/picom) if you experience screen tearing.
+Implements a few minimal patches (listed below) with a low tech feel based around an 8bit palette and pixel fonts. No transparency, no compositor, **no distractions**. Do add [picom](https://github.com/yshui/picom) if you experience screen tearing.
 
 ![screenshot](screenshot.png)
 
@@ -20,6 +20,7 @@ To install just go into each directory and sudo make clean install (script pendi
 - [executable name in tag](https://dwm.suckless.org/patches/taglabels/)
 - [signal statusbar location and button](https://dwm.suckless.org/patches/statuscmd/)
 - [add vertical resizing](https://dwm.suckless.org/patches/stackmfact/)
+- [simple tile gaps](https://dwm.suckless.org/patches/tilegap/)
 
 ### [dmenu](https://tools.suckless.org/dmenu/) - dynamic menu
 - [highlight searched chars](https://tools.suckless.org/dmenu/patches/highlight/)
@@ -73,6 +74,7 @@ To install just go into each directory and sudo make clean install (script pendi
 | WIN + S              | changes to floating layout              | anywhere      | dwm    |
 | WIN + D              | changes to monocle layout               | anywhere      | dwm    |
 | WIN + F              | changes a window to floating            | tiled layout  | dwm    |
+| WIN + G              | toggles between gaps/no gaps            | tiled layout  | dwm    |
 | WIN + <              | changes stacked window to master        | tiled layout  | dwm    |
 | WIN + Z              | decrease master window amount           | tiled layout  | dwm    |
 | WIN + X              | increase master window amount           | tiled layout  | dwm    |
