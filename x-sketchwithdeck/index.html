@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>deck</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    :root {
+      --bg: #1a1c1c;
+      --text: #aaabac;
+      --accent: #986c98;
+    }
+    
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    #toolbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 20px;
+      background: linear-gradient(180deg, #222425 0%, var(--bg) 100%);
+      border-bottom: 1px solid #2a2c2c;
+      flex-shrink: 0;
+    }
+    
+    #sketch-select {
+      background: #252727;
+      color: var(--text);
+      border: 1px solid #3a3c3c;
+      padding: 8px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      min-width: 180px;
+      flex: 1;
+      height: 36px;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: none;
+    }
+    
+    #sketch-select:hover {
+      border-color: var(--accent);
+    }
+    
+    #sketch-select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    
+    .btn-group {
+      display: flex;
+      gap: 16px;
+      margin-left: auto;
+    }
+    
+    .btn {
+      background: #252727;
+      color: var(--text);
+      border: 1px solid #3a3c3c;
+      padding: 8px 16px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .btn.square {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    
+    .btn:hover {
+      background: #2d2f30;
+      border-color: var(--accent);
+    }
+    
+    .btn.active {
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+    }
+    
+    .btn.recording {
+      background: #c44;
+      color: #fff;
+      border-color: #c44;
+      animation: pulse 1s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    #canvas-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    
+    #canvas-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      line-height: 0;
+      width: 100%;
+      height: 100%;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    
+    #canvas-wrapper canvas {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    
+    #statusbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 20px;
+      background: #151617;
+      border-top: 1px solid #2a2c2c;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    
+    .status-right {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .status-label {
+      color: #666;
+    }
+    
+    .status-value {
+      color: var(--accent);
+      font-weight: 500;
+    }
+    
+    .status-divider {
+      width: 1px;
+      height: 12px;
+      background: #3a3c3c;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+    
+    #dialog-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    
+    #dialog {
+      background: var(--bg);
+      border: 1px solid #3a3c3c;
+      border-radius: 8px;
+      width: 360px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+    }
+    
+    #dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      border-bottom: 1px solid #3a3c3c;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    #dialog-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    #dialog-footer {
+      display: flex;
+      justify-content: center;
+      padding: 16px;
+      border-top: 1px solid #3a3c3c;
+    }
+    
+    .dialog-actions {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+    }
+    
+    .color-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .color-swatch {
+      width: 36px;
+      height: 36px;
+      border: 1px solid #3a3c3c;
+      cursor: pointer;
+      padding: 0;
+      overflow: hidden;
+      border-radius: 0;
+    }
+    
+    .color-swatch::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+    
+    .color-swatch::-webkit-color-swatch {
+      border: none;
+      border-radius: 0;
+    }
+    
+    .color-name {
+      flex: 1;
+      background: #252727;
+      color: var(--text);
+      border: 1px solid #3a3c3c;
+      padding: 8px 12px;
+      font-family: inherit;
+      font-size: 13px;
+    }
+    
+    .color-name:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    
+    .color-delete {
+      background: transparent;
+      color: #666;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px 8px;
+    }
+    
+    .color-delete:hover {
+      color: #c44;
+    }
+    
+    #btn-add-color {
+      width: 100%;
+      margin-top: 8px;
+      height: 36px;
+    }
+    
+    .btn.square.small {
+      width: 28px;
+      height: 28px;
+      font-size: 18px;
+    }
+    
+    input[type="color"] {
+      -webkit-appearance: none;
+      background: #252727;
+    }
+    
+    input[type="color"]::-webkit-color-swatch-wrapper {
+      background: #252727;
+    }
+    
+    #import-input {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="toolbar">
+    <button class="btn square" id="btn-import" title="import colors">
+      <span>↑</span>
+    </button>
+    <button class="btn square" id="btn-palette" title="color palette">
+      <span>🟣</span>
+    </button>
+    <button class="btn square" id="btn-export" title="export colors">
+      <span>↓</span>
+    </button>
+    <select id="sketch-select"></select>
+    <div class="btn-group">
+      <button class="btn square" id="btn-reload" title="reload sketch">
+        <span>↻</span>
+      </button>
+      <button class="btn square" id="btn-play">
+        <span id="play-icon">▶</span>
+      </button>
+      <button class="btn square" id="btn-record">
+        <span id="record-icon">●</span>
+      </button>
+    </div>
+  </div>
+  
+  <div id="canvas-container"></div>
+  
+    <div id="statusbar">
+      <div class="status-left">
+        <div class="status-item">
+          <span class="status-label">fps</span>
+          <span class="status-value" id="status-fps">--</span>
+        </div>
+        <div class="status-divider"></div>
+        <div class="status-item">
+          <span class="status-label">frame</span>
+          <span class="status-value" id="status-frame">--</span>
+        </div>
+        <div class="status-divider"></div>
+        <div class="status-item">
+          <span class="status-label">time</span>
+          <span class="status-value" id="status-time">00:00</span>
+        </div>
+      </div>
+      <div class="status-right">
+        <div class="status-item">
+          <span class="status-label">state</span>
+          <span class="status-value" id="status-state">paused</span>
+        </div>
+      </div>
+  </div>
+
+  <div id="dialog-overlay" class="hidden">
+    <div id="dialog">
+      <div id="dialog-header">
+        <span>palette</span>
+        <button class="btn square" id="dialog-close">✕</button>
+      </div>
+      <div id="dialog-body"></div>
+      <div id="dialog-footer">
+        <div></div>
+        <div class="dialog-actions">
+          <button class="btn square" id="btn-cancel">✕</button>
+          <button class="btn square" id="btn-apply">✓</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="import-input" accept=".json" class="hidden">
+
+  <script type="module">
+    const SKETCHES = [
+      { name: 'test', path: 'sketches/test.js' },
+      { name: 'sky', path: 'sketches/sky.js' },
+      { name: 'cielo', path: 'sketches/cielo.js' },
+      { name: 'orbit', path: 'sketches/orbit.js' },
+      { name: 'estados', path: 'sketches/estados.js' },
+      { name: 'orbitas', path: 'sketches/orbitas.js' }
+    ];
+
+    let currentSketchIndex = 0;
+    let sketchInstance = null;
+    let isPlaying = false;
+    let isRecording = false;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let p5Instance = null;
+    let loadedSketchFn = null;
+    let paletteColors = [];
+    let tempPaletteColors = [];
+
+    const selectEl = document.getElementById('sketch-select');
+    const playBtn = document.getElementById('btn-play');
+    const recordBtn = document.getElementById('btn-record');
+    const reloadBtn = document.getElementById('btn-reload');
+    const paletteBtn = document.getElementById('btn-palette');
+    const exportBtn = document.getElementById('btn-export');
+    const importBtn = document.getElementById('btn-import');
+    const playIcon = document.getElementById('play-icon');
+    const recordIcon = document.getElementById('record-icon');
+    const statusFps = document.getElementById('status-fps');
+    const statusFrame = document.getElementById('status-frame');
+    const statusTime = document.getElementById('status-time');
+    const statusState = document.getElementById('status-state');
+    const canvasContainer = document.getElementById('canvas-container');
+    const dialogOverlay = document.getElementById('dialog-overlay');
+    const dialogBody = document.getElementById('dialog-body');
+    const dialogClose = document.getElementById('dialog-close');
+    const btnCancel = document.getElementById('btn-cancel');
+    const btnApply = document.getElementById('btn-apply');
+    const importInput = document.getElementById('import-input');
+    
+    let elapsedTime = 0;
+
+    function loadColorsFromStorage() {
+      const saved = localStorage.getItem('deckColors');
+      if (saved) {
+        try {
+          paletteColors = JSON.parse(saved);
+        } catch (e) {
+          paletteColors = [];
+        }
+      }
+    }
+
+    function saveColorsToStorage() {
+      localStorage.setItem('deckColors', JSON.stringify(paletteColors));
+    }
+
+    function getColorsObject() {
+      const obj = {};
+      paletteColors.forEach(c => {
+        obj[c.name] = c.value;
+      });
+      return obj;
+    }
+
+    function exportColors() {
+      const data = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        try {
+          data[key] = JSON.parse(localStorage.getItem(key));
+        } catch (e) {
+          data[key] = localStorage.getItem(key);
+        }
+      }
+      const blob = new Blob([JSON.stringify({ deck: data }, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'deck.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importColors(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (imported.deck) {
+            Object.keys(imported.deck).forEach(key => {
+              localStorage.setItem(key, JSON.stringify(imported.deck[key]));
+            });
+            loadColorsFromStorage();
+            loadSketch(currentSketchIndex);
+          } else if (Array.isArray(imported)) {
+            paletteColors = imported;
+            saveColorsToStorage();
+            loadSketch(currentSketchIndex);
+          }
+        } catch (err) {
+          console.error('Failed to import:', err);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function openPaletteDialog() {
+      tempPaletteColors = JSON.parse(JSON.stringify(paletteColors));
+      renderPaletteDialog();
+      dialogOverlay.classList.remove('hidden');
+    }
+
+    function closePaletteDialog() {
+      dialogOverlay.classList.add('hidden');
+    }
+
+    function renderPaletteDialog() {
+      dialogBody.innerHTML = '';
+      
+      tempPaletteColors.forEach((color, index) => {
+        const row = document.createElement('div');
+        row.className = 'color-row';
+        
+        const swatch = document.createElement('input');
+        swatch.type = 'color';
+        swatch.className = 'color-swatch';
+        swatch.value = color.value;
+        swatch.addEventListener('input', (e) => {
+          tempPaletteColors[index].value = e.target.value;
+        });
+        
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.className = 'color-name';
+        nameInput.value = color.name;
+        nameInput.placeholder = 'color name';
+        nameInput.addEventListener('input', (e) => {
+          tempPaletteColors[index].name = e.target.value;
+        });
+        
+        const delBtn = document.createElement('button');
+        delBtn.className = 'color-delete';
+        delBtn.innerHTML = '×';
+        delBtn.addEventListener('click', () => {
+          tempPaletteColors.splice(index, 1);
+          renderPaletteDialog();
+        });
+        
+        row.appendChild(swatch);
+        row.appendChild(nameInput);
+        row.appendChild(delBtn);
+        dialogBody.appendChild(row);
+      });
+      
+      const addBtn = document.createElement('button');
+      addBtn.className = 'btn';
+      addBtn.id = 'btn-add-color';
+      addBtn.textContent = '+ add color';
+      addBtn.addEventListener('click', () => {
+        tempPaletteColors.push({ name: 'color' + tempPaletteColors.length, value: '#986c98' });
+        renderPaletteDialog();
+      });
+      dialogBody.appendChild(addBtn);
+    }
+
+    function applyPalette() {
+      paletteColors = JSON.parse(JSON.stringify(tempPaletteColors));
+      saveColorsToStorage();
+      closePaletteDialog();
+      loadSketch(currentSketchIndex);
+    }
+
+    loadColorsFromStorage();
+
+    SKETCHES.forEach((sketch, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = sketch.name;
+      selectEl.appendChild(opt);
+    });
+
+    async function loadSketch(index) {
+      if (p5Instance) {
+        p5Instance.remove();
+        p5Instance = null;
+      }
+      
+      isPlaying = false;
+      playIcon.textContent = '▶';
+      
+      currentSketchIndex = index;
+      selectEl.value = index;
+      elapsedTime = 0;
+      
+      canvasContainer.innerHTML = '<div id="canvas-wrapper"></div>';
+      
+      const basePath = window.location.origin + window.location.pathname.replace(/\/[^\/]+$/, '/');
+      const module = await import(basePath + SKETCHES[index].path + '?t=' + Date.now());
+      loadedSketchFn = module.default;
+      
+      const wrapper = document.getElementById('canvas-wrapper');
+      const colorsObj = getColorsObject();
+      p5Instance = new p5((p) => {
+        p.colors = colorsObj;
+        loadedSketchFn(p);
+        
+        const originalDraw = p.draw;
+        p.draw = () => {
+          if (isPlaying && originalDraw) {
+            originalDraw();
+          }
+          updateStatus();
+        };
+      }, wrapper);
+      
+      updateStatus();
+    }
+
+    function updateStatus() {
+      if (p5Instance && isPlaying) {
+        statusFps.textContent = Math.round(p5Instance.frameRate());
+        statusFrame.textContent = p5Instance.frameCount;
+      }
+      if (isPlaying) {
+        elapsedTime += 1/60;
+      }
+      const mins = Math.floor(elapsedTime / 60).toString().padStart(2, '0');
+      const secs = Math.floor(elapsedTime % 60).toString().padStart(2, '0');
+      statusTime.textContent = mins + ':' + secs;
+      statusState.textContent = isPlaying ? 'playing' : 'paused';
+      statusState.style.color = isPlaying ? '#986c98' : '#c44';
+    }
+
+    function togglePlay() {
+      isPlaying = !isPlaying;
+      playIcon.textContent = isPlaying ? '⏸' : '▶';
+      updateStatus();
+    }
+
+    function toggleRecord() {
+      if (!isRecording) {
+        startRecording();
+      } else {
+        stopRecording();
+      }
+    }
+
+    function startRecording() {
+      const canvas = canvasContainer.querySelector('canvas');
+      if (!canvas) return;
+      
+      const stream = canvas.captureStream(60);
+      recordedChunks = [];
+      
+      mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+      
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          recordedChunks.push(e.data);
+        }
+      };
+      
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${SKETCHES[currentSketchIndex].name}_${Date.now()}.webm`;
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+      
+      mediaRecorder.start();
+      isRecording = true;
+      recordBtn.classList.add('recording');
+      recordIcon.textContent = '■';
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+      isRecording = false;
+      recordBtn.classList.remove('recording');
+      recordIcon.textContent = '●';
+    }
+
+    playBtn.addEventListener('click', togglePlay);
+    recordBtn.addEventListener('click', toggleRecord);
+    reloadBtn.addEventListener('click', () => loadSketch(currentSketchIndex));
+    paletteBtn.addEventListener('click', openPaletteDialog);
+    exportBtn.addEventListener('click', exportColors);
+    importBtn.addEventListener('click', () => importInput.click());
+    importInput.addEventListener('change', (e) => {
+      if (e.target.files[0]) {
+        importColors(e.target.files[0]);
+        e.target.value = '';
+      }
+    });
+    dialogClose.addEventListener('click', closePaletteDialog);
+    btnCancel.addEventListener('click', closePaletteDialog);
+    btnApply.addEventListener('click', applyPalette);
+    dialogOverlay.addEventListener('click', (e) => {
+      if (e.target === dialogOverlay) closePaletteDialog();
+    });
+    
+    selectEl.addEventListener('change', (e) => {
+      loadSketch(parseInt(e.target.value));
+    });
+
+    loadSketch(0);
+    updateStatus();
+  </script>
+</body>
+</html>
