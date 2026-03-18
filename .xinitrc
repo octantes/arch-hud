@@ -13,7 +13,7 @@ if ! pgrep -x mpd > /dev/null; then
     mpd --no-daemon ~/.config/mpd/mpd.conf &     # run music server
 fi
 
-xsetroot -solid "#986C98"
+xsetroot -solid "#100F0F"
 
 xset -dpms   # disable screen sleep
 xset s off   # disable screen sleep
