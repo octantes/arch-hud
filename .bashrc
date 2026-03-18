@@ -15,28 +15,27 @@ PS1='[\u@\h \W]\$ '
 
 alias sudo='sudo env "PATH=$PATH"'                           # sudo inherits path
 
-export G=/home/agentes
+export C=/home/cadenas
 export A=/home/archivo
 export K=/home/kaste
 export H=/home/havitat
 export M=/home/mounts
+export O=/home/cadenas/octantes
 
-export O=/home/kaste/.octantes
-
-alias @g='cd /home/agentes'
+alias @c='cd /home/cadenas'
 alias @a='cd /home/archivo'
 alias @k='cd /home/kaste'
 alias @h='cd /home/havitat'
 alias @m='cd /home/mounts'
+alias @o='cd /home/cadenas/octantes'
 
-alias @o='cd /home/kaste/.octantes'
-
-alias @c='cd /home/kaste/.arch/crypts'
-alias @h='cd /home/kaste/.arch'
+alias @ac='cd /home/kaste/.arch/crypts'
+alias @ar='cd /home/kaste/.arch'
 
 alias lf='ranger'
 alias ls='ls --color=auto'
 alias grep='grep --color=auto'
+alias remote='ssh -Xf workstation'
 
 # PATHS TO .CONFIG --------------------------------------------------------
 
@@ -53,8 +52,6 @@ export PATH="$CARGO_HOME/bin:$PATH"                          # set cargo
 [ -s "$CARGO_HOME/env" ] && \. "$CARGO_HOME/env"             # set env
 export STEAM_HOME="$HOME/.config/steam"                      # set steam
 export GNUPGHOME="$HOME/.config/gnupg"                       # set gpg
-export NSS_CONFIG_DIR="$HOME/.config/pki"                    # set pki
-
 
 # NVM TO XDG --------------------------------------------------------------
 

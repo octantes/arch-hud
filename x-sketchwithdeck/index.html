@@ -67,6 +67,10 @@
       border-color: var(--accent);
     }
     
+    .hidden {
+      display: none !important;
+    }
+    
     .btn-group {
       display: flex;
       gap: 16px;
@@ -188,10 +192,6 @@
       width: 1px;
       height: 12px;
       background: #3a3c3c;
-    }
-    
-    .hidden {
-      display: none !important;
     }
     
     #dialog-overlay {
@@ -335,6 +335,13 @@
     #import-input {
       display: none;
     }
+
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
   </style>
 </head>
 <body>
@@ -344,9 +351,6 @@
     </button>
     <button class="btn square" id="btn-import" title="import colors">
       <span>↑</span>
-    </button>
-    <button class="btn square" id="btn-palette" title="color palette">
-      <span>🟣</span>
     </button>
     <button class="btn square" id="btn-export" title="export colors">
       <span>↓</span>
@@ -366,6 +370,16 @@
   </div>
   
   <div id="canvas-container"></div>
+  
+  <div id="dialog-overlay" class="hidden">
+    <div id="dialog">
+      <div id="dialog-header">
+        <span>help</span>
+        <button class="btn square" id="dialog-close">✕</button>
+      </div>
+      <div id="dialog-body"></div>
+    </div>
+  </div>
   
     <div id="statusbar">
       <div class="status-left">
@@ -392,27 +406,46 @@
       </div>
   </div>
 
-  <div id="dialog-overlay" class="hidden">
-    <div id="dialog">
-      <div id="dialog-header">
-        <span>palette</span>
-        <button class="btn square" id="dialog-close">✕</button>
-      </div>
-      <div id="dialog-body"></div>
-      <div id="dialog-footer">
-        <div></div>
-        <div class="dialog-actions">
-          <button class="btn square" id="btn-cancel">✕</button>
-          <button class="btn square" id="btn-apply">✓</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <input type="file" id="import-input" accept=".json" class="hidden">
 
   <script type="module">
     const selectEl = document.getElementById('sketch-select');
+    const dialogOverlay = document.getElementById('dialog-overlay');
+    const dialogBody = document.getElementById('dialog-body');
+    const dialogClose = document.getElementById('dialog-close');
+    
+    function openHelpDialog() {
+      dialogBody.innerHTML = `
+        <div>
+          <h4>exposing state machine</h4>
+          <p>
+            to make your sketch work with the state ui, add this to your sketch:<br><br>
+            <code>p.getSketchInfo = function() {<br>
+              &nbsp;&nbsp;return {<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;current: stateMachine.currentState,<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;states: Object.keys(stateMachine.states),<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;names: {...state names...},<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;actions: { nextState: () => {...} }<br>
+              &nbsp;&nbsp;};<br>
+            };</code>
+          </p>
+        </div>
+        <div>
+          <h4>using palette colors</h4>
+          <p>
+            colors defined in the palette are available as <code>p.colors.COLOR_NAME</code>.<br><br>
+            example:<br>
+            <code>p.fill(p.colors.primary);</code><br><br>
+            or use the default palette array <code>p.colors</code> which contains all defined colors as an object.
+          </p>
+        </div>
+      `;
+      dialogOverlay.classList.remove('hidden');
+    }
+    
+    function closeHelpDialog() {
+      dialogOverlay.classList.add('hidden');
+    }
     
     async function loadSketches() {
       try {
@@ -426,7 +459,6 @@
         
         links.forEach(link => {
           const href = link.getAttribute('href');
-          // Skip parent directory, query strings, and duplicates
           if (!href || href === '../' || href.startsWith('?') || seen.has(href)) return;
           seen.add(href);
           
@@ -465,12 +497,10 @@
     let p5Instance = null;
     let loadedSketchFn = null;
     let paletteColors = [];
-    let tempPaletteColors = [];
 
     const playBtn = document.getElementById('btn-play');
     const recordBtn = document.getElementById('btn-record');
     const reloadBtn = document.getElementById('btn-reload');
-    const paletteBtn = document.getElementById('btn-palette');
     const exportBtn = document.getElementById('btn-export');
     const importBtn = document.getElementById('btn-import');
     const playIcon = document.getElementById('play-icon');
@@ -480,13 +510,6 @@
     const statusTime = document.getElementById('status-time');
     const statusState = document.getElementById('status-state');
     const canvasContainer = document.getElementById('canvas-container');
-    const dialogOverlay = document.getElementById('dialog-overlay');
-    const dialogBody = document.getElementById('dialog-body');
-    const dialogHeader = document.getElementById('dialog-header');
-    const dialogFooter = document.getElementById('dialog-footer');
-    const dialogClose = document.getElementById('dialog-close');
-    const btnCancel = document.getElementById('btn-cancel');
-    const btnApply = document.getElementById('btn-apply');
     const importInput = document.getElementById('import-input');
     
     let elapsedTime = 0;
@@ -556,79 +579,11 @@
       reader.readAsText(file);
     }
 
-    function openPaletteDialog() {
-      tempPaletteColors = JSON.parse(JSON.stringify(paletteColors));
-      renderPaletteDialog();
-      dialogOverlay.classList.remove('hidden');
-    }
-
-    function closePaletteDialog() {
-      dialogOverlay.classList.add('hidden');
-    }
-
-    function renderPaletteDialog() {
-      dialogBody.innerHTML = '';
-      
-      tempPaletteColors.forEach((color, index) => {
-        const row = document.createElement('div');
-        row.className = 'color-row';
-        
-        const swatch = document.createElement('input');
-        swatch.type = 'color';
-        swatch.className = 'color-swatch';
-        swatch.value = color.value;
-        swatch.addEventListener('input', (e) => {
-          tempPaletteColors[index].value = e.target.value;
-        });
-        
-        const nameInput = document.createElement('input');
-        nameInput.type = 'text';
-        nameInput.className = 'color-name';
-        nameInput.value = color.name;
-        nameInput.placeholder = 'color name';
-        nameInput.addEventListener('input', (e) => {
-          tempPaletteColors[index].name = e.target.value;
-        });
-        
-        const delBtn = document.createElement('button');
-        delBtn.className = 'color-delete';
-        delBtn.innerHTML = '×';
-        delBtn.addEventListener('click', () => {
-          tempPaletteColors.splice(index, 1);
-          renderPaletteDialog();
-        });
-        
-        row.appendChild(swatch);
-        row.appendChild(nameInput);
-        row.appendChild(delBtn);
-        dialogBody.appendChild(row);
-      });
-      
-      const addBtn = document.createElement('button');
-      addBtn.className = 'btn';
-      addBtn.id = 'btn-add-color';
-      addBtn.textContent = '+ add color';
-      addBtn.addEventListener('click', () => {
-        tempPaletteColors.push({ name: 'color' + tempPaletteColors.length, value: '#986c98' });
-        renderPaletteDialog();
-      });
-      dialogBody.appendChild(addBtn);
-    }
-
-    function applyPalette() {
-      paletteColors = JSON.parse(JSON.stringify(tempPaletteColors));
-      saveColorsToStorage();
-      closePaletteDialog();
-      loadSketch(currentSketchIndex);
-    }
-
     loadColorsFromStorage();
 
     let stateUIContainer = null;
-    let currentSketchInfo = null;
 
     async function loadSketch(index) {
-      // Clean up old state UI when switching sketches
       if (stateUIContainer) {
         stateUIContainer.remove();
         stateUIContainer = null;
@@ -667,27 +622,20 @@
         };
       }, wrapper);
       
-      // Auto-detect sketch info and create state UI
       if (p5Instance && p5Instance.getSketchInfo) {
-        console.log('Found getSketchInfo, creating UI');
         createStateUI(() => p5Instance.getSketchInfo());
-      } else {
-        console.log('No getSketchInfo found on p5Instance');
-        console.log('p5Instance keys:', p5Instance ? Object.keys(p5Instance) : 'null');
       }
       
       updateStatus();
     }
     
     function createStateUI(getSketchInfo) {
-      // Remove existing state UI if any
       if (stateUIContainer) {
         stateUIContainer.remove();
       }
       
       try {
         const initialInfo = getSketchInfo();
-        
         if (!initialInfo || !initialInfo.states || initialInfo.states.length === 0) {
           return;
         }
@@ -695,7 +643,6 @@
         return;
       }
       
-      // Create container for the ribbon
       stateUIContainer = document.createElement('div');
       stateUIContainer.id = 'state-ui-container';
       stateUIContainer.style.cssText = `
@@ -705,37 +652,14 @@
         transform: translateY(-50%);
         z-index: 100;
         display: flex;
-        align-items: center;
+        align-items: stretch;
       `;
       
-      // The visible tab with arrow (always visible) - bigger
-      const tab = document.createElement('div');
-      tab.id = 'state-ui-tab';
-      tab.style.cssText = `
-        background: rgba(30, 30, 30, 0.95);
-        color: #aaabac;
-        width: 30px;
-        height: 80px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-        border-radius: 4px 0 0 4px;
-        cursor: pointer;
-        border-top: 1px solid #3a3c3c;
-        border-left: 1px solid #3a3c3c;
-        border-bottom: 1px solid #3a3c3c;
-        user-select: none;
-      `;
-      tab.innerHTML = '&#9658;'; // Right arrow
-      
-      // The sliding panel - hidden by default
       const statePanel = document.createElement('div');
       statePanel.id = 'state-ui';
       statePanel.style.cssText = `
         background: rgba(30, 30, 30, 0.95);
         color: #aaabac;
-        padding: 8px 14px;
         font-family: 'JetBrains Mono', monospace;
         font-size: 12px;
         border: 1px solid #3a3c3c;
@@ -743,43 +667,287 @@
         border-radius: 4px 0 0 4px;
         user-select: none;
         transform: translateX(100%);
-        transition: transform 0.2s ease;
+        transition: transform 0.2s ease, opacity 0.2s ease;
         display: flex;
-        flex-direction: column;
-        gap: 6px;
-        max-height: 80vh;
-        overflow-y: auto;
+        align-items: stretch;
         opacity: 0;
         pointer-events: none;
+        width: 218px;
       `;
       
-      // Create state items container
+      const tab = document.createElement('div');
+      tab.id = 'state-ui-tab';
+      tab.style.cssText = `
+        position: fixed;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(30, 30, 30, 0.95);
+        color: #aaabac;
+        width: 30px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        cursor: pointer;
+        user-select: none;
+        z-index: 101;
+        border-radius: 4px 0 0 4px;
+        border: 1px solid #3a3c3c;
+        border-right: none;
+        transition: border-color 0.15s ease;
+      `;
+      tab.addEventListener('mouseenter', () => {
+        tab.style.borderColor = '#986c98';
+        if (!isFixed) {
+          statePanel.style.transform = 'translateX(0)';
+          statePanel.style.opacity = '1';
+          statePanel.style.pointerEvents = 'auto';
+        }
+      });
+      tab.addEventListener('mouseleave', () => {
+        tab.style.borderColor = '#3a3c3c';
+        if (!isFixed) {
+          statePanel.style.transform = 'translateX(100%)';
+          statePanel.style.opacity = '0';
+          statePanel.style.pointerEvents = 'none';
+        }
+      });
+      
+      let stateTimerSettings = {};
+      let timerInterval = null;
+      let currentTimerValue = 0;
+      let timersEnabled = true;
+      let loopEnabled;
+      
+      function loadTimerSettings() {
+        const sketchName = SKETCHES[currentSketchIndex]?.name || 'default';
+        try {
+          const saved = localStorage.getItem('stateTimers_' + sketchName);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            stateTimerSettings = parsed.stateTimers || {};
+            timersEnabled = parsed.timersEnabled !== false;
+            loopEnabled = parsed.loopEnabled || false;
+          } else {
+            const info = getSketchInfo();
+            info.states?.forEach(s => {
+              stateTimerSettings[s] = 30;
+            });
+            timersEnabled = true;
+            loopEnabled = true;
+          }
+        } catch (e) {
+          stateTimerSettings = {};
+        }
+      }
+      
+      function saveTimerSettings() {
+        const sketchName = SKETCHES[currentSketchIndex]?.name || 'default';
+        localStorage.setItem('stateTimers_' + sketchName, JSON.stringify({
+          stateTimers: stateTimerSettings,
+          timersEnabled,
+          loopEnabled
+        }));
+      }
+      
+      function formatTime(seconds) {
+        return seconds + 's';
+      }
+      
+      function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        if (!timersEnabled || !isPlaying) return;
+        
+        const info = getSketchInfo();
+        const currentState = info.current;
+        currentTimerValue = stateTimerSettings[currentState] || 30;
+        
+        timerInterval = setInterval(() => {
+          if (!isPlaying) return;
+          
+          currentTimerValue -= 0.1;
+          renderTimerDisplay();
+          
+          if (currentTimerValue <= 0) {
+            const info2 = getSketchInfo();
+            const states = info2.states || [];
+            const currentIdx = states.indexOf(info2.current);
+            
+            if (loopEnabled && currentIdx === states.length - 1) {
+              if (info2.actions && info2.actions.setState) {
+                info2.actions.setState(states[0]);
+                resetTimerForState(states[0]);
+              }
+            } else if (currentIdx < states.length - 1) {
+              if (info2.actions && info2.actions.setState) {
+                info2.actions.setState(states[currentIdx + 1]);
+                resetTimerForState(states[currentIdx + 1]);
+              }
+            } else {
+              stopTimer();
+            }
+            
+            updateStateDisplay();
+          }
+        }, 100);
+      }
+      
+      function stopTimer() {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+      }
+      
+      function resetTimerForState(stateName) {
+        currentTimerValue = stateTimerSettings[stateName] || 30;
+        renderTimerDisplay();
+        if (timersEnabled) {
+          startTimer();
+        }
+      }
+      
+      function renderTimerDisplay() {
+        const timerEls = statesContainer.querySelectorAll('.state-timer');
+        timerEls.forEach(el => {
+          const stateName = el.dataset.state;
+          const info = getSketchInfo();
+          const isActive = stateName === info.current;
+          const value = isActive ? Math.max(0, Math.ceil(currentTimerValue)) : (stateTimerSettings[stateName] || 30);
+          el.textContent = formatTime(value);
+          el.style.color = isActive ? '#aaabac' : '#666';
+        });
+      }
+      
+      function renderControls() {
+        controlsContainer.innerHTML = '';
+        
+        const loopBtn = document.createElement('div');
+        loopBtn.style.cssText = `
+          width: 16px;
+          height: 16px;
+          border: 1px solid ${loopEnabled ? '#986c98' : 'transparent'};
+          background: ${loopEnabled ? '#986c98' : '#252727'};
+          border-radius: 3px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 10px;
+          cursor: pointer;
+          color: ${loopEnabled ? '#1a1c1c' : '#aaabac'};
+          flex-shrink: 0;
+        `;
+        loopBtn.innerHTML = '&#8634;';
+        loopBtn.title = 'Loop';
+        loopBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          loopEnabled = !loopEnabled;
+          saveTimerSettings();
+          renderControls();
+        });
+        
+        const timerBtn = document.createElement('div');
+        timerBtn.style.cssText = `
+          width: 16px;
+          height: 16px;
+          border: 1px solid ${timersEnabled ? '#986c98' : 'transparent'};
+          background: ${timersEnabled ? '#986c98' : '#252727'};
+          border-radius: 3px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 10px;
+          cursor: pointer;
+          color: ${timersEnabled ? '#1a1c1c' : '#aaabac'};
+          flex-shrink: 0;
+        `;
+        timerBtn.innerHTML = '&#9201;';
+        timerBtn.title = 'Enable/Disable Timers';
+        timerBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          timersEnabled = !timersEnabled;
+          saveTimerSettings();
+          renderControls();
+          if (timersEnabled) {
+            resetTimerForState(getSketchInfo().current);
+          } else {
+            stopTimer();
+          }
+          renderTimerDisplay();
+        });
+        
+        controlsContainer.appendChild(loopBtn);
+        controlsContainer.appendChild(timerBtn);
+      }
+      
+      const statesContent = document.createElement('div');
+      statesContent.style.cssText = `
+        padding: 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-height: 80vh;
+        overflow-y: auto;
+        width: 188px;
+      `;
+      
       const statesContainer = document.createElement('div');
-      statesContainer.id = 'states-list';
       statesContainer.style.cssText = `
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 8px;
       `;
       
-      statePanel.appendChild(statesContainer);
-      stateUIContainer.appendChild(statePanel);
-      stateUIContainer.appendChild(tab);
-      document.body.appendChild(stateUIContainer);
+      const controlsContainer = document.createElement('div');
+      controlsContainer.style.cssText = `
+        display: flex;
+        gap: 8px;
+      `;
       
-      // Hover behavior on the whole container
-      stateUIContainer.addEventListener('mouseenter', () => {
-        statePanel.style.transform = 'translateX(0)';
-        statePanel.style.opacity = '1';
-        statePanel.style.pointerEvents = 'auto';
-        tab.innerHTML = '&#9668;'; // Left arrow
+      statesContent.appendChild(statesContainer);
+      statesContent.appendChild(controlsContainer);
+      statePanel.appendChild(statesContent);
+      stateUIContainer.appendChild(statePanel);
+      document.body.appendChild(stateUIContainer);
+      document.body.appendChild(tab);
+      
+      let isFixed = false;
+      const rightArrow = '&#9654;';
+      const leftArrow = '&#9664;';
+      tab.innerHTML = rightArrow;
+      
+      tab.addEventListener('click', (e) => {
+        e.stopPropagation();
+        isFixed = !isFixed;
+        
+        if (isFixed) {
+          statePanel.style.transform = 'translateX(0)';
+          statePanel.style.opacity = '1';
+          statePanel.style.pointerEvents = 'auto';
+          tab.innerHTML = leftArrow;
+        } else {
+          statePanel.style.transform = 'translateX(100%)';
+          statePanel.style.opacity = '0';
+          statePanel.style.pointerEvents = 'none';
+          tab.innerHTML = rightArrow;
+        }
       });
       
-      stateUIContainer.addEventListener('mouseleave', () => {
-        statePanel.style.transform = 'translateX(100%)';
-        statePanel.style.opacity = '0';
-        statePanel.style.pointerEvents = 'none';
-        tab.innerHTML = '&#9658;'; // Right arrow
+      statePanel.addEventListener('mouseenter', () => {
+        if (!isFixed) {
+          statePanel.style.transform = 'translateX(0)';
+          statePanel.style.opacity = '1';
+          statePanel.style.pointerEvents = 'auto';
+        }
+      });
+      statePanel.addEventListener('mouseleave', () => {
+        if (!isFixed) {
+          statePanel.style.transform = 'translateX(100%)';
+          statePanel.style.opacity = '0';
+          statePanel.style.pointerEvents = 'none';
+        }
       });
       
       function updateStateDisplay() {
@@ -791,33 +959,414 @@
         statesContainer.innerHTML = '';
         
         states.forEach((stateKey) => {
+          const isActive = stateKey === currentState;
+          const stateRow = document.createElement('div');
+          stateRow.style.cssText = `
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          `;
+          
           const stateItem = document.createElement('div');
           stateItem.style.cssText = `
+            flex: 1;
             padding: 4px 8px;
             border-radius: 3px;
             cursor: pointer;
-            ${stateKey === currentState ? 'background: #986c98;' : ''}
+            background: ${isActive ? '#986c98' : 'transparent'};
+            color: ${isActive ? '#1a1c1c' : '#aaabac'};
+            border: 1px solid transparent;
+            transition: border-color 0.15s ease;
           `;
+          stateItem.addEventListener('mouseenter', () => {
+            stateItem.style.borderColor = '#986c98';
+          });
+          stateItem.addEventListener('mouseleave', () => {
+            stateItem.style.borderColor = 'transparent';
+          });
           stateItem.textContent = stateNames[stateKey] || stateKey;
           
           stateItem.addEventListener('click', (e) => {
             e.stopPropagation();
-            // Call setState on the state machine
             const info2 = getSketchInfo();
             if (info2.actions && info2.actions.setState) {
               info2.actions.setState(stateKey);
             } else if (info2.actions && info2.actions.nextState) {
-              // Fallback to nextState
               info2.actions.nextState();
             }
+            resetTimerForState(stateKey);
             updateStateDisplay();
+            renderControls();
           });
           
-          statesContainer.appendChild(stateItem);
+          const timerDisplay = document.createElement('div');
+          timerDisplay.className = 'state-timer';
+          timerDisplay.dataset.state = stateKey;
+          const timerValue = isActive ? Math.max(0, Math.ceil(currentTimerValue)) : (stateTimerSettings[stateKey] || 30);
+          timerDisplay.textContent = formatTime(timerValue);
+          timerDisplay.style.cssText = `
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: ${isActive ? '#aaabac' : '#666'};
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 3px;
+            width: 28px;
+            text-align: center;
+            box-sizing: border-box;
+          `;
+          
+          timerDisplay.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.value = stateTimerSettings[stateKey] || 30;
+            input.min = 1;
+            input.style.cssText = `
+              width: 28px;
+              background: #252727;
+              color: #aaabac;
+              border: 1px solid #986c98;
+              border-radius: 3px;
+              font-family: 'JetBrains Mono', monospace;
+              font-size: 10px;
+              padding: 2px 4px;
+              text-align: center;
+              box-sizing: border-box;
+            `;
+            
+            timerDisplay.innerHTML = '';
+            timerDisplay.appendChild(input);
+            input.focus();
+            input.select();
+            
+            const finishEdit = () => {
+              const newValue = parseInt(input.value) || 30;
+              stateTimerSettings[stateKey] = newValue;
+              saveTimerSettings();
+              if (stateKey === getSketchInfo().current) {
+                currentTimerValue = newValue;
+              }
+              renderTimerDisplay();
+            };
+            
+            input.addEventListener('blur', finishEdit);
+            input.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter') {
+                finishEdit();
+              } else if (e.key === 'Escape') {
+                renderTimerDisplay();
+              }
+            });
+          });
+          
+          stateRow.appendChild(stateItem);
+          stateRow.appendChild(timerDisplay);
+          statesContainer.appendChild(stateRow);
+        });
+        
+        renderControls();
+        renderTimerDisplay();
+      }
+      
+      loadTimerSettings();
+      const initialInfo = getSketchInfo();
+      currentTimerValue = stateTimerSettings[initialInfo.current] || 30;
+      updateStateDisplay();
+      if (timersEnabled) {
+        startTimer();
+      }
+    }
+
+    function createPaletteUI() {
+      const container = document.createElement('div');
+      container.style.cssText = `
+        position: fixed;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 100;
+        display: flex;
+        align-items: stretch;
+      `;
+      
+      const panel = document.createElement('div');
+      panel.id = 'palette-ui';
+      panel.style.cssText = `
+        background: rgba(30, 30, 30, 0.95);
+        color: #aaabac;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        border: 1px solid #3a3c3c;
+        border-left: none;
+        border-radius: 0 4px 4px 0;
+        user-select: none;
+        transform: translateX(-100%);
+        transition: transform 0.2s ease, opacity 0.2s ease;
+        display: flex;
+        justify-content: flex-end;
+        align-items: stretch;
+        opacity: 0;
+        pointer-events: none;
+        width: 218px;
+      `;
+      
+      const contentWrapper = document.createElement('div');
+      contentWrapper.style.cssText = `
+        padding: 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        overflow-y: auto;
+        width: 188px;
+        flex-shrink: 0;
+        max-height: 80vh;
+      `;
+      
+      const tab = document.createElement('div');
+      tab.id = 'palette-ui-tab';
+      tab.style.cssText = `
+        position: fixed;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(30, 30, 30, 0.95);
+        color: #aaabac;
+        width: 30px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        cursor: pointer;
+        user-select: none;
+        z-index: 101;
+        border-radius: 0 4px 4px 0;
+        border: 1px solid #3a3c3c;
+        border-left: none;
+        transition: border-color 0.15s ease;
+      `;
+      
+      const colorsContainer = document.createElement('div');
+      colorsContainer.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      `;
+      
+      function renderColors() {
+        colorsContainer.innerHTML = '';
+        
+        paletteColors.forEach((color, index) => {
+          const row = document.createElement('div');
+          row.style.cssText = `
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: space-between;
+          `;
+          
+          const swatchWrapper = document.createElement('div');
+          swatchWrapper.style.cssText = `
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            background: ${color.value};
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+          `;
+          
+          const swatch = document.createElement('input');
+          swatch.type = 'color';
+          swatch.style.cssText = `
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            width: 36px;
+            height: 36px;
+            border: none;
+            cursor: pointer;
+            background: transparent;
+          `;
+          swatch.value = color.value;
+          swatch.addEventListener('input', (e) => {
+            paletteColors[index].value = e.target.value;
+            swatchWrapper.style.background = e.target.value;
+            saveColorsToStorage();
+          });
+          
+          swatchWrapper.appendChild(swatch);
+          
+          const nameInput = document.createElement('input');
+          nameInput.type = 'text';
+          nameInput.style.cssText = `
+            width: 80px;
+            height: 16px;
+            background: transparent;
+            color: #aaabac;
+            border: none;
+            padding: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+          `;
+          nameInput.value = color.name;
+          nameInput.placeholder = 'color name';
+          nameInput.addEventListener('input', (e) => {
+            paletteColors[index].name = e.target.value;
+            saveColorsToStorage();
+          });
+          
+          const delBtn = document.createElement('button');
+          delBtn.style.cssText = `
+            background: transparent;
+            color: #666;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 0;
+            width: 16px;
+            flex-shrink: 0;
+          `;
+          delBtn.innerHTML = '×';
+          delBtn.addEventListener('mouseenter', () => {
+            delBtn.style.color = '#c44';
+          });
+          delBtn.addEventListener('mouseleave', () => {
+            delBtn.style.color = '#666';
+          });
+          delBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            paletteColors.splice(index, 1);
+            saveColorsToStorage();
+            if (p5Instance) {
+              p5Instance.colors = getColorsObject();
+            }
+            renderColors();
+          });
+          
+          row.appendChild(swatchWrapper);
+          row.appendChild(nameInput);
+          row.appendChild(delBtn);
+          colorsContainer.appendChild(row);
         });
       }
       
-      updateStateDisplay();
+      function createAddButton() {
+        const row = document.createElement('div');
+        row.className = 'palette-add-row';
+        row.style.cssText = `
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        `;
+        
+        const addIcon = document.createElement('div');
+        addIcon.style.cssText = `
+          width: 16px;
+          height: 16px;
+          border: 1px solid transparent;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          color: #aaabac;
+          cursor: pointer;
+          transition: border-color 0.15s ease;
+          flex-shrink: 0;
+        `;
+        addIcon.innerHTML = '+';
+        addIcon.addEventListener('mouseenter', () => {
+          addIcon.style.borderColor = '#986c98';
+        });
+        addIcon.addEventListener('mouseleave', () => {
+          addIcon.style.borderColor = 'transparent';
+        });
+        addIcon.addEventListener('click', () => {
+          paletteColors.push({ name: 'color' + paletteColors.length, value: '#986c98' });
+          saveColorsToStorage();
+          if (p5Instance) {
+            p5Instance.colors = getColorsObject();
+          }
+          renderColors();
+        });
+        
+        const addText = document.createElement('span');
+        addText.style.cssText = `
+          color: #aaabac;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 12px;
+          flex: 1;
+        `;
+        addText.textContent = 'add color';
+        
+        row.appendChild(addIcon);
+        row.appendChild(addText);
+        return row;
+      }
+      
+      panel.appendChild(contentWrapper);
+      contentWrapper.appendChild(colorsContainer);
+      contentWrapper.appendChild(createAddButton());
+      container.appendChild(panel);
+      document.body.appendChild(container);
+      document.body.appendChild(tab);
+      
+      renderColors();
+      
+      let isFixed = false;
+      const rightArrow = '&#9654;';
+      const leftArrow = '&#9664;';
+      tab.innerHTML = rightArrow;
+      
+      tab.addEventListener('mouseenter', () => {
+        tab.style.borderColor = '#986c98';
+        if (!isFixed) {
+          panel.style.transform = 'translateX(0)';
+          panel.style.opacity = '1';
+          panel.style.pointerEvents = 'auto';
+        }
+      });
+      tab.addEventListener('mouseleave', () => {
+        tab.style.borderColor = '#3a3c3c';
+        if (!isFixed) {
+          panel.style.transform = 'translateX(-100%)';
+          panel.style.opacity = '0';
+          panel.style.pointerEvents = 'none';
+        }
+      });
+      
+      panel.addEventListener('mouseenter', () => {
+        if (!isFixed) {
+          panel.style.transform = 'translateX(0)';
+          panel.style.opacity = '1';
+          panel.style.pointerEvents = 'auto';
+        }
+      });
+      panel.addEventListener('mouseleave', () => {
+        if (!isFixed) {
+          panel.style.transform = 'translateX(-100%)';
+          panel.style.opacity = '0';
+          panel.style.pointerEvents = 'none';
+        }
+      });
+      
+      tab.addEventListener('click', (e) => {
+        e.stopPropagation();
+        isFixed = !isFixed;
+        
+        if (isFixed) {
+          panel.style.transform = 'translateX(0)';
+          panel.style.opacity = '1';
+          panel.style.pointerEvents = 'auto';
+          tab.innerHTML = leftArrow;
+        } else {
+          panel.style.transform = 'translateX(-100%)';
+          panel.style.opacity = '0';
+          panel.style.pointerEvents = 'none';
+          tab.innerHTML = rightArrow;
+        }
+      });
     }
 
     function updateStatus() {
@@ -838,6 +1387,13 @@
     function togglePlay() {
       isPlaying = !isPlaying;
       playIcon.textContent = isPlaying ? '⏸' : '▶';
+      
+      if (isPlaying && timersEnabled) {
+        startTimer();
+      } else if (!isPlaying) {
+        stopTimer();
+      }
+      
       updateStatus();
     }
 
@@ -856,7 +1412,7 @@
       const stream = canvas.captureStream(60);
       recordedChunks = [];
       
-      mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+      mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 16000000 });
       
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
@@ -892,52 +1448,14 @@
     playBtn.addEventListener('click', togglePlay);
     recordBtn.addEventListener('click', toggleRecord);
     reloadBtn.addEventListener('click', () => loadSketch(currentSketchIndex));
-    paletteBtn.addEventListener('click', openPaletteDialog);
     exportBtn.addEventListener('click', exportColors);
     importBtn.addEventListener('click', () => importInput.click());
     
-    // Help button
     const helpBtn = document.getElementById('btn-help');
-    helpBtn.addEventListener('click', () => {
-      const helpContent = `
-        <div style="display:flex;flex-direction:column;gap:20px;">
-          <div>
-            <h4 style="color:#986c98;margin-bottom:8px;">exposing state machine</h4>
-            <p style="color:#888;font-size:13px;line-height:1.5;">
-              to make your sketch work with the state ui, add this to your sketch:<br><br>
-              <code style="background:#222;padding:2px 6px;border-radius:3px;">p.getSketchInfo = function() {<br>
-                &nbsp;&nbsp;return {<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;current: stateMachine.currentState,<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;states: Object.keys(stateMachine.states),<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;names: {...state names...},<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;actions: { nextState: () => {...} }<br>
-                &nbsp;&nbsp;};<br>
-              };</code>
-            </p>
-          </div>
-          <div>
-            <h4 style="color:#986c98;margin-bottom:8px;">using palette colors</h4>
-            <p style="color:#888;font-size:13px;line-height:1.5;">
-              colors defined in the palette are available as <code style="background:#222;padding:2px 6px;border-radius:3px;">p.colors.COLOR_NAME</code>.<br><br>
-              example:<br>
-              <code style="background:#222;padding:2px 6px;border-radius:3px;">p.fill(p.colors.primary);</code><br><br>
-              or use the default palette array <code style="background:#222;padding:2px 6px;border-radius:3px;">p.colors</code> which contains all defined colors as an object.
-            </p>
-          </div>
-        </div>
-      `;
-      dialogBody.innerHTML = helpContent;
-      dialogHeader.querySelector('span').textContent = 'Help';
-      dialogFooter.style.display = 'none';
-      dialogOverlay.classList.remove('hidden');
-      
-      // Override close to restore dialog
-      const originalClose = closePaletteDialog;
-      closePaletteDialog = () => {
-        dialogOverlay.classList.add('hidden');
-        dialogFooter.style.display = 'flex';
-        dialogHeader.querySelector('span').textContent = 'palette';
-      };
+    helpBtn.addEventListener('click', openHelpDialog);
+    dialogClose.addEventListener('click', closeHelpDialog);
+    dialogOverlay.addEventListener('click', (e) => {
+      if (e.target === dialogOverlay) closeHelpDialog();
     });
     
     importInput.addEventListener('change', (e) => {
@@ -946,18 +1464,13 @@
         e.target.value = '';
       }
     });
-    dialogClose.addEventListener('click', closePaletteDialog);
-    btnCancel.addEventListener('click', closePaletteDialog);
-    btnApply.addEventListener('click', applyPalette);
-    dialogOverlay.addEventListener('click', (e) => {
-      if (e.target === dialogOverlay) closePaletteDialog();
-    });
     
     selectEl.addEventListener('change', (e) => {
       loadSketch(parseInt(e.target.value));
     });
 
     loadSketch(0);
+    createPaletteUI();
     updateStatus();
   </script>
 </body>
