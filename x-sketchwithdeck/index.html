@@ -39,6 +39,7 @@
       background: linear-gradient(180deg, #222425 0%, var(--bg) 100%);
       border-bottom: 1px solid #2a2c2c;
       flex-shrink: 0;
+      user-select: none;
     }
     
     #sketch-select {
@@ -153,6 +154,7 @@
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      user-select: none;
     }
     
     .status-left {
@@ -209,7 +211,7 @@
       background: var(--bg);
       border: 1px solid #3a3c3c;
       border-radius: 8px;
-      width: 360px;
+      width: 414px;
       max-height: 80vh;
       display: flex;
       flex-direction: column;
@@ -225,6 +227,7 @@
       font-size: 14px;
       text-transform: uppercase;
       letter-spacing: 1px;
+      user-select: none;
     }
     
     #dialog-body {
@@ -234,6 +237,11 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
+      user-select: none;
+    }
+    
+    #dialog-body code {
+      user-select: text;
     }
     
     #dialog-footer {
@@ -241,6 +249,7 @@
       justify-content: center;
       padding: 16px;
       border-top: 1px solid #3a3c3c;
+      user-select: none;
     }
     
     .dialog-actions {
@@ -330,6 +339,9 @@
 </head>
 <body>
   <div id="toolbar">
+    <button class="btn square" id="btn-help" title="help">
+      <span>?</span>
+    </button>
     <button class="btn square" id="btn-import" title="import colors">
       <span>↑</span>
     </button>
@@ -400,17 +412,52 @@
   <input type="file" id="import-input" accept=".json" class="hidden">
 
   <script type="module">
-    const SKETCHES = [
-      { name: 'test', path: 'sketches/test.js' },
-      { name: 'sky', path: 'sketches/sky.js' },
-      { name: 'cielo', path: 'sketches/cielo.js' },
-      { name: 'orbit', path: 'sketches/orbit.js' },
-      { name: 'estados', path: 'sketches/estados.js' },
-      { name: 'orbitas', path: 'sketches/orbitas.js' }
-    ];
+    const selectEl = document.getElementById('sketch-select');
+    
+    async function loadSketches() {
+      try {
+        const response = await fetch('sketches/');
+        const text = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/html');
+        const links = doc.querySelectorAll('a');
+        const seen = new Set();
+        const sketches = [];
+        
+        links.forEach(link => {
+          const href = link.getAttribute('href');
+          // Skip parent directory, query strings, and duplicates
+          if (!href || href === '../' || href.startsWith('?') || seen.has(href)) return;
+          seen.add(href);
+          
+          const filename = href.split('/').pop();
+          if (filename && filename.endsWith('.js') && !href.includes('/og-bkp/')) {
+            const name = filename.replace('.js', '');
+            sketches.push({ name, path: 'sketches/' + filename });
+          }
+        });
+        
+        return sketches;
+      } catch (e) {
+        console.warn('Could not auto-load sketches, using defaults:', e);
+        return [
+          { name: 'test', path: 'sketches/test.js' },
+          { name: 'orbitas', path: 'sketches/orbitas.js' }
+        ];
+      }
+    }
+
+    let SKETCHES = await loadSketches();
+    
+    selectEl.innerHTML = '';
+    SKETCHES.forEach((sketch, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = sketch.name;
+      selectEl.appendChild(opt);
+    });
 
     let currentSketchIndex = 0;
-    let sketchInstance = null;
     let isPlaying = false;
     let isRecording = false;
     let mediaRecorder = null;
@@ -420,7 +467,6 @@
     let paletteColors = [];
     let tempPaletteColors = [];
 
-    const selectEl = document.getElementById('sketch-select');
     const playBtn = document.getElementById('btn-play');
     const recordBtn = document.getElementById('btn-record');
     const reloadBtn = document.getElementById('btn-reload');
@@ -436,6 +482,8 @@
     const canvasContainer = document.getElementById('canvas-container');
     const dialogOverlay = document.getElementById('dialog-overlay');
     const dialogBody = document.getElementById('dialog-body');
+    const dialogHeader = document.getElementById('dialog-header');
+    const dialogFooter = document.getElementById('dialog-footer');
     const dialogClose = document.getElementById('dialog-close');
     const btnCancel = document.getElementById('btn-cancel');
     const btnApply = document.getElementById('btn-apply');
@@ -576,14 +624,16 @@
 
     loadColorsFromStorage();
 
-    SKETCHES.forEach((sketch, i) => {
-      const opt = document.createElement('option');
-      opt.value = i;
-      opt.textContent = sketch.name;
-      selectEl.appendChild(opt);
-    });
+    let stateUIContainer = null;
+    let currentSketchInfo = null;
 
     async function loadSketch(index) {
+      // Clean up old state UI when switching sketches
+      if (stateUIContainer) {
+        stateUIContainer.remove();
+        stateUIContainer = null;
+      }
+      
       if (p5Instance) {
         p5Instance.remove();
         p5Instance = null;
@@ -617,7 +667,157 @@
         };
       }, wrapper);
       
+      // Auto-detect sketch info and create state UI
+      if (p5Instance && p5Instance.getSketchInfo) {
+        console.log('Found getSketchInfo, creating UI');
+        createStateUI(() => p5Instance.getSketchInfo());
+      } else {
+        console.log('No getSketchInfo found on p5Instance');
+        console.log('p5Instance keys:', p5Instance ? Object.keys(p5Instance) : 'null');
+      }
+      
       updateStatus();
+    }
+    
+    function createStateUI(getSketchInfo) {
+      // Remove existing state UI if any
+      if (stateUIContainer) {
+        stateUIContainer.remove();
+      }
+      
+      try {
+        const initialInfo = getSketchInfo();
+        
+        if (!initialInfo || !initialInfo.states || initialInfo.states.length === 0) {
+          return;
+        }
+      } catch(e) {
+        return;
+      }
+      
+      // Create container for the ribbon
+      stateUIContainer = document.createElement('div');
+      stateUIContainer.id = 'state-ui-container';
+      stateUIContainer.style.cssText = `
+        position: fixed;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 100;
+        display: flex;
+        align-items: center;
+      `;
+      
+      // The visible tab with arrow (always visible) - bigger
+      const tab = document.createElement('div');
+      tab.id = 'state-ui-tab';
+      tab.style.cssText = `
+        background: rgba(30, 30, 30, 0.95);
+        color: #aaabac;
+        width: 30px;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        border-radius: 4px 0 0 4px;
+        cursor: pointer;
+        border-top: 1px solid #3a3c3c;
+        border-left: 1px solid #3a3c3c;
+        border-bottom: 1px solid #3a3c3c;
+        user-select: none;
+      `;
+      tab.innerHTML = '&#9658;'; // Right arrow
+      
+      // The sliding panel - hidden by default
+      const statePanel = document.createElement('div');
+      statePanel.id = 'state-ui';
+      statePanel.style.cssText = `
+        background: rgba(30, 30, 30, 0.95);
+        color: #aaabac;
+        padding: 8px 14px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        border: 1px solid #3a3c3c;
+        border-right: none;
+        border-radius: 4px 0 0 4px;
+        user-select: none;
+        transform: translateX(100%);
+        transition: transform 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-height: 80vh;
+        overflow-y: auto;
+        opacity: 0;
+        pointer-events: none;
+      `;
+      
+      // Create state items container
+      const statesContainer = document.createElement('div');
+      statesContainer.id = 'states-list';
+      statesContainer.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      `;
+      
+      statePanel.appendChild(statesContainer);
+      stateUIContainer.appendChild(statePanel);
+      stateUIContainer.appendChild(tab);
+      document.body.appendChild(stateUIContainer);
+      
+      // Hover behavior on the whole container
+      stateUIContainer.addEventListener('mouseenter', () => {
+        statePanel.style.transform = 'translateX(0)';
+        statePanel.style.opacity = '1';
+        statePanel.style.pointerEvents = 'auto';
+        tab.innerHTML = '&#9668;'; // Left arrow
+      });
+      
+      stateUIContainer.addEventListener('mouseleave', () => {
+        statePanel.style.transform = 'translateX(100%)';
+        statePanel.style.opacity = '0';
+        statePanel.style.pointerEvents = 'none';
+        tab.innerHTML = '&#9658;'; // Right arrow
+      });
+      
+      function updateStateDisplay() {
+        const info = getSketchInfo();
+        const states = info.states || [];
+        const currentState = info.current;
+        const stateNames = info.names || {};
+        
+        statesContainer.innerHTML = '';
+        
+        states.forEach((stateKey) => {
+          const stateItem = document.createElement('div');
+          stateItem.style.cssText = `
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            ${stateKey === currentState ? 'background: #986c98;' : ''}
+          `;
+          stateItem.textContent = stateNames[stateKey] || stateKey;
+          
+          stateItem.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Call setState on the state machine
+            const info2 = getSketchInfo();
+            if (info2.actions && info2.actions.setState) {
+              info2.actions.setState(stateKey);
+            } else if (info2.actions && info2.actions.nextState) {
+              // Fallback to nextState
+              info2.actions.nextState();
+            }
+            updateStateDisplay();
+          });
+          
+          statesContainer.appendChild(stateItem);
+        });
+      }
+      
+      updateStateDisplay();
     }
 
     function updateStatus() {
@@ -695,6 +895,51 @@
     paletteBtn.addEventListener('click', openPaletteDialog);
     exportBtn.addEventListener('click', exportColors);
     importBtn.addEventListener('click', () => importInput.click());
+    
+    // Help button
+    const helpBtn = document.getElementById('btn-help');
+    helpBtn.addEventListener('click', () => {
+      const helpContent = `
+        <div style="display:flex;flex-direction:column;gap:20px;">
+          <div>
+            <h4 style="color:#986c98;margin-bottom:8px;">exposing state machine</h4>
+            <p style="color:#888;font-size:13px;line-height:1.5;">
+              to make your sketch work with the state ui, add this to your sketch:<br><br>
+              <code style="background:#222;padding:2px 6px;border-radius:3px;">p.getSketchInfo = function() {<br>
+                &nbsp;&nbsp;return {<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;current: stateMachine.currentState,<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;states: Object.keys(stateMachine.states),<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;names: {...state names...},<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;actions: { nextState: () => {...} }<br>
+                &nbsp;&nbsp;};<br>
+              };</code>
+            </p>
+          </div>
+          <div>
+            <h4 style="color:#986c98;margin-bottom:8px;">using palette colors</h4>
+            <p style="color:#888;font-size:13px;line-height:1.5;">
+              colors defined in the palette are available as <code style="background:#222;padding:2px 6px;border-radius:3px;">p.colors.COLOR_NAME</code>.<br><br>
+              example:<br>
+              <code style="background:#222;padding:2px 6px;border-radius:3px;">p.fill(p.colors.primary);</code><br><br>
+              or use the default palette array <code style="background:#222;padding:2px 6px;border-radius:3px;">p.colors</code> which contains all defined colors as an object.
+            </p>
+          </div>
+        </div>
+      `;
+      dialogBody.innerHTML = helpContent;
+      dialogHeader.querySelector('span').textContent = 'Help';
+      dialogFooter.style.display = 'none';
+      dialogOverlay.classList.remove('hidden');
+      
+      // Override close to restore dialog
+      const originalClose = closePaletteDialog;
+      closePaletteDialog = () => {
+        dialogOverlay.classList.add('hidden');
+        dialogFooter.style.display = 'flex';
+        dialogHeader.querySelector('span').textContent = 'palette';
+      };
+    });
+    
     importInput.addEventListener('change', (e) => {
       if (e.target.files[0]) {
         importColors(e.target.files[0]);
