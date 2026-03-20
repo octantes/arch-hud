@@ -18,6 +18,11 @@
       --bg: #1a1c1c;
       --text: #aaabac;
       --accent: #986c98;
+      --panel-bg: #252727;
+      --border: #3a3c3c;
+      --danger: #c44;
+      --danger-light: #c84;
+      --fixed-panel-bg: rgba(30, 30, 30, 0.95);
     }
     
     body {
@@ -37,15 +42,15 @@
       gap: 16px;
       padding: 12px 20px;
       background: linear-gradient(180deg, #222425 0%, var(--bg) 100%);
-      border-bottom: 1px solid #2a2c2c;
+      border-bottom: 1px solid var(--border);
       flex-shrink: 0;
       user-select: none;
     }
     
     #sketch-select {
-      background: #252727;
+      background: var(--panel-bg);
       color: var(--text);
-      border: 1px solid #3a3c3c;
+      border: 1px solid var(--border);
       padding: 8px 12px;
       font-family: inherit;
       font-size: 13px;
@@ -78,9 +83,9 @@
     }
     
     .btn {
-      background: #252727;
+      background: var(--panel-bg);
       color: var(--text);
-      border: 1px solid #3a3c3c;
+      border: 1px solid var(--border);
       padding: 8px 16px;
       font-family: inherit;
       font-size: 12px;
@@ -111,9 +116,16 @@
     }
     
     .btn.recording {
-      background: #c44;
+      background: var(--danger);
       color: #fff;
-      border-color: #c44;
+      border-color: var(--danger);
+      animation: pulse 1s infinite;
+    }
+
+    .btn.armed {
+      background: var(--danger-light);
+      color: #fff;
+      border-color: var(--danger-light);
       animation: pulse 1s infinite;
     }
     
@@ -154,7 +166,7 @@
       align-items: center;
       padding: 8px 20px;
       background: #151617;
-      border-top: 1px solid #2a2c2c;
+      border-top: 1px solid var(--border);
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -191,7 +203,7 @@
     .status-divider {
       width: 1px;
       height: 12px;
-      background: #3a3c3c;
+      background: var(--border);
     }
     
     #dialog-overlay {
@@ -209,7 +221,7 @@
     
     #dialog {
       background: var(--bg);
-      border: 1px solid #3a3c3c;
+      border: 1px solid var(--border);
       border-radius: 8px;
       width: 414px;
       max-height: 80vh;
@@ -223,7 +235,7 @@
       justify-content: space-between;
       align-items: center;
       padding: 16px;
-      border-bottom: 1px solid #3a3c3c;
+      border-bottom: 1px solid var(--border);
       font-size: 14px;
       text-transform: uppercase;
       letter-spacing: 1px;
@@ -244,96 +256,34 @@
       user-select: text;
     }
     
-    #dialog-footer {
-      display: flex;
-      justify-content: center;
-      padding: 16px;
-      border-top: 1px solid #3a3c3c;
-      user-select: none;
-    }
-    
     .dialog-actions {
       display: flex;
       justify-content: center;
       gap: 18px;
     }
     
-    .color-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+    #dialog-body h4 {
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 500;
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     
-    .color-swatch {
-      width: 36px;
-      height: 36px;
-      border: 1px solid #3a3c3c;
-      cursor: pointer;
-      padding: 0;
-      overflow: hidden;
-      border-radius: 0;
-    }
-    
-    .color-swatch::-webkit-color-swatch-wrapper {
-      padding: 0;
-    }
-    
-    .color-swatch::-webkit-color-swatch {
-      border: none;
-      border-radius: 0;
-    }
-    
-    .color-name {
-      flex: 1;
-      background: #252727;
+    #dialog-body p {
       color: var(--text);
-      border: 1px solid #3a3c3c;
-      padding: 8px 12px;
-      font-family: inherit;
-      font-size: 13px;
-    }
-    
-    .color-name:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-    
-    .color-delete {
-      background: transparent;
-      color: #666;
-      border: none;
-      cursor: pointer;
-      font-size: 18px;
-      padding: 4px 8px;
-    }
-    
-    .color-delete:hover {
-      color: #c44;
-    }
-    
-    #btn-add-color {
-      width: 100%;
-      margin-top: 8px;
-      height: 36px;
-    }
-    
-    .btn.square.small {
-      width: 28px;
-      height: 28px;
-      font-size: 18px;
+      font-size: 11px;
+      line-height: 1.5;
     }
     
     input[type="color"] {
       -webkit-appearance: none;
-      background: #252727;
+      background: var(--panel-bg);
     }
     
     input[type="color"]::-webkit-color-swatch-wrapper {
-      background: #252727;
-    }
-    
-    #import-input {
-      display: none;
+      background: var(--panel-bg);
     }
 
     input::-webkit-outer-spin-button,
@@ -414,6 +364,17 @@
     const dialogBody = document.getElementById('dialog-body');
     const dialogClose = document.getElementById('dialog-close');
     
+    const C = {
+      accent: '#986c98',
+      panelBg: '#252727',
+      border: '#3a3c3c',
+      text: '#aaabac',
+      bg: '#1a1c1c',
+      danger: '#c44',
+      dangerLight: '#c84',
+      fixedPanelBg: 'rgba(30, 30, 30, 0.95)'
+    };
+    
     function openHelpDialog() {
       dialogBody.innerHTML = `
         <div>
@@ -424,8 +385,8 @@
               &nbsp;&nbsp;return {<br>
               &nbsp;&nbsp;&nbsp;&nbsp;current: stateMachine.currentState,<br>
               &nbsp;&nbsp;&nbsp;&nbsp;states: Object.keys(stateMachine.states),<br>
-              &nbsp;&nbsp;&nbsp;&nbsp;names: {...state names...},<br>
-              &nbsp;&nbsp;&nbsp;&nbsp;actions: { nextState: () => {...} }<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;names: {/* state names */},<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;actions: { nextState: () => {/* action */} }<br>
               &nbsp;&nbsp;};<br>
             };</code>
           </p>
@@ -437,6 +398,13 @@
             example:<br>
             <code>p.fill(p.colors.primary);</code><br><br>
             or use the default palette array <code>p.colors</code> which contains all defined colors as an object.
+          </p>
+        </div>
+        <div>
+          <h4>recording</h4>
+          <p>
+            press the record button to arm recording (orange). actual recording starts when you press play.<br><br>
+            this ensures the video captures only the animation, not the blank canvas time before pressing play.
           </p>
         </div>
       `;
@@ -492,10 +460,10 @@
     let currentSketchIndex = 0;
     let isPlaying = false;
     let isRecording = false;
+    let recordingArmed = false;
     let mediaRecorder = null;
     let recordedChunks = [];
     let p5Instance = null;
-    let loadedSketchFn = null;
     let paletteColors = [];
 
     const playBtn = document.getElementById('btn-play');
@@ -513,6 +481,94 @@
     const importInput = document.getElementById('import-input');
     
     let elapsedTime = 0;
+    
+    let stateTimerSettings = {};
+    let timerInterval = null;
+    let currentTimerValue = 0;
+    let getSketchInfoGlobal = null;
+    let timersEnabled = true;
+    let loopEnabled = false;
+    let updateStateDisplayInner = null;
+    
+    function formatTime(seconds) {
+      return seconds + 's';
+    }
+    
+    function startTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      if (!timersEnabled || !isPlaying) return;
+      if (!getSketchInfoGlobal) return;
+      
+      const info = getSketchInfoGlobal();
+      if (!info || !info.states || !info.current) return;
+      
+      const currentState = info.current;
+      currentTimerValue = stateTimerSettings[currentState] || 30;
+      
+      timerInterval = setInterval(() => {
+        if (!isPlaying) return;
+        if (!getSketchInfoGlobal) return;
+        
+        currentTimerValue -= 0.1;
+        renderTimerDisplay();
+        
+        if (currentTimerValue <= 0) {
+          const info2 = getSketchInfoGlobal();
+          const states = info2.states || [];
+          const currentIdx = states.indexOf(info2.current);
+          
+          if (loopEnabled && currentIdx === states.length - 1) {
+            if (info2.actions && info2.actions.setState) {
+              info2.actions.setState(states[0]);
+              resetTimerForState(states[0]);
+            }
+          } else if (currentIdx < states.length - 1) {
+            if (info2.actions && info2.actions.setState) {
+              info2.actions.setState(states[currentIdx + 1]);
+              resetTimerForState(states[currentIdx + 1]);
+            }
+          } else {
+            stopTimer();
+          }
+          
+          updateStateDisplay();
+        }
+      }, 100);
+    }
+    
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+    
+    function resetTimerForState(stateName) {
+      currentTimerValue = stateTimerSettings[stateName] || 30;
+      if (timersEnabled && isPlaying) {
+        if (timerInterval) clearInterval(timerInterval);
+        startTimer();
+      }
+      renderTimerDisplay();
+    }
+    
+    function renderTimerDisplay() {
+      const timerEls = document.querySelectorAll('.state-timer');
+      timerEls.forEach(el => {
+        const stateName = el.dataset.state;
+        const info = getSketchInfoGlobal?.();
+        const isActive = stateName === info?.current;
+        const value = isActive ? Math.max(0, Math.ceil(currentTimerValue)) : (stateTimerSettings[stateName] || 30);
+        el.textContent = formatTime(value);
+        el.style.color = isActive ? C.text : '#666';
+      });
+    }
+    
+    function updateStateDisplay() {
+      if (updateStateDisplayInner) {
+        updateStateDisplayInner();
+      }
+    }
 
     function loadColorsFromStorage() {
       const saved = localStorage.getItem('deckColors');
@@ -582,18 +638,39 @@
     loadColorsFromStorage();
 
     let stateUIContainer = null;
+    let stateUITab = null;
+    let paletteContainer = null;
+    let paletteTab = null;
+    let paletteUICreated = false;
 
     async function loadSketch(index) {
       if (stateUIContainer) {
         stateUIContainer.remove();
         stateUIContainer = null;
       }
+      if (stateUITab) {
+        stateUITab.remove();
+        stateUITab = null;
+      }
+      if (paletteContainer) {
+        paletteContainer.remove();
+        paletteContainer = null;
+      }
+      if (paletteTab) {
+        paletteTab.remove();
+        paletteTab = null;
+      }
+      paletteUICreated = false;
       
       if (p5Instance) {
         p5Instance.remove();
         p5Instance = null;
       }
       
+      if (isRecording) {
+        stopRecording();
+      }
+      recordingArmed = false;
       isPlaying = false;
       playIcon.textContent = '▶';
       
@@ -605,13 +682,12 @@
       
       const basePath = window.location.origin + window.location.pathname.replace(/\/[^\/]+$/, '/');
       const module = await import(basePath + SKETCHES[index].path + '?t=' + Date.now());
-      loadedSketchFn = module.default;
       
       const wrapper = document.getElementById('canvas-wrapper');
       const colorsObj = getColorsObject();
       p5Instance = new p5((p) => {
         p.colors = colorsObj;
-        loadedSketchFn(p);
+        module.default(p);
         
         const originalDraw = p.draw;
         p.draw = () => {
@@ -627,13 +703,14 @@
       }
       
       updateStatus();
+      
+      if (!paletteUICreated) {
+        createPaletteUI();
+        paletteUICreated = true;
+      }
     }
     
     function createStateUI(getSketchInfo) {
-      if (stateUIContainer) {
-        stateUIContainer.remove();
-      }
-      
       try {
         const initialInfo = getSketchInfo();
         if (!initialInfo || !initialInfo.states || initialInfo.states.length === 0) {
@@ -642,6 +719,8 @@
       } catch(e) {
         return;
       }
+      
+      getSketchInfoGlobal = getSketchInfo;
       
       stateUIContainer = document.createElement('div');
       stateUIContainer.id = 'state-ui-container';
@@ -658,11 +737,11 @@
       const statePanel = document.createElement('div');
       statePanel.id = 'state-ui';
       statePanel.style.cssText = `
-        background: rgba(30, 30, 30, 0.95);
-        color: #aaabac;
+        background: ${C.fixedPanelBg};
+        color: ${C.text};
         font-family: 'JetBrains Mono', monospace;
         font-size: 12px;
-        border: 1px solid #3a3c3c;
+        border: 1px solid ${C.border};
         border-right: none;
         border-radius: 4px 0 0 4px;
         user-select: none;
@@ -682,8 +761,8 @@
         right: 0;
         top: 50%;
         transform: translateY(-50%);
-        background: rgba(30, 30, 30, 0.95);
-        color: #aaabac;
+        background: ${C.fixedPanelBg};
+        color: ${C.text};
         width: 30px;
         height: 50px;
         display: flex;
@@ -694,12 +773,12 @@
         user-select: none;
         z-index: 101;
         border-radius: 4px 0 0 4px;
-        border: 1px solid #3a3c3c;
+        border: 1px solid ${C.border};
         border-right: none;
         transition: border-color 0.15s ease;
       `;
       tab.addEventListener('mouseenter', () => {
-        tab.style.borderColor = '#986c98';
+        tab.style.borderColor = C.accent;
         if (!isFixed) {
           statePanel.style.transform = 'translateX(0)';
           statePanel.style.opacity = '1';
@@ -707,19 +786,13 @@
         }
       });
       tab.addEventListener('mouseleave', () => {
-        tab.style.borderColor = '#3a3c3c';
+        tab.style.borderColor = C.border;
         if (!isFixed) {
           statePanel.style.transform = 'translateX(100%)';
           statePanel.style.opacity = '0';
           statePanel.style.pointerEvents = 'none';
         }
       });
-      
-      let stateTimerSettings = {};
-      let timerInterval = null;
-      let currentTimerValue = 0;
-      let timersEnabled = true;
-      let loopEnabled;
       
       function loadTimerSettings() {
         const sketchName = SKETCHES[currentSketchIndex]?.name || 'default';
@@ -731,10 +804,12 @@
             timersEnabled = parsed.timersEnabled !== false;
             loopEnabled = parsed.loopEnabled || false;
           } else {
-            const info = getSketchInfo();
-            info.states?.forEach(s => {
-              stateTimerSettings[s] = 30;
-            });
+            const info = getSketchInfoGlobal?.();
+            if (info?.states) {
+              info.states.forEach(s => {
+                stateTimerSettings[s] = 30;
+              });
+            }
             timersEnabled = true;
             loopEnabled = true;
           }
@@ -752,75 +827,6 @@
         }));
       }
       
-      function formatTime(seconds) {
-        return seconds + 's';
-      }
-      
-      function startTimer() {
-        if (timerInterval) clearInterval(timerInterval);
-        if (!timersEnabled || !isPlaying) return;
-        
-        const info = getSketchInfo();
-        const currentState = info.current;
-        currentTimerValue = stateTimerSettings[currentState] || 30;
-        
-        timerInterval = setInterval(() => {
-          if (!isPlaying) return;
-          
-          currentTimerValue -= 0.1;
-          renderTimerDisplay();
-          
-          if (currentTimerValue <= 0) {
-            const info2 = getSketchInfo();
-            const states = info2.states || [];
-            const currentIdx = states.indexOf(info2.current);
-            
-            if (loopEnabled && currentIdx === states.length - 1) {
-              if (info2.actions && info2.actions.setState) {
-                info2.actions.setState(states[0]);
-                resetTimerForState(states[0]);
-              }
-            } else if (currentIdx < states.length - 1) {
-              if (info2.actions && info2.actions.setState) {
-                info2.actions.setState(states[currentIdx + 1]);
-                resetTimerForState(states[currentIdx + 1]);
-              }
-            } else {
-              stopTimer();
-            }
-            
-            updateStateDisplay();
-          }
-        }, 100);
-      }
-      
-      function stopTimer() {
-        if (timerInterval) {
-          clearInterval(timerInterval);
-          timerInterval = null;
-        }
-      }
-      
-      function resetTimerForState(stateName) {
-        currentTimerValue = stateTimerSettings[stateName] || 30;
-        renderTimerDisplay();
-        if (timersEnabled) {
-          startTimer();
-        }
-      }
-      
-      function renderTimerDisplay() {
-        const timerEls = statesContainer.querySelectorAll('.state-timer');
-        timerEls.forEach(el => {
-          const stateName = el.dataset.state;
-          const info = getSketchInfo();
-          const isActive = stateName === info.current;
-          const value = isActive ? Math.max(0, Math.ceil(currentTimerValue)) : (stateTimerSettings[stateName] || 30);
-          el.textContent = formatTime(value);
-          el.style.color = isActive ? '#aaabac' : '#666';
-        });
-      }
-      
       function renderControls() {
         controlsContainer.innerHTML = '';
         
@@ -828,15 +834,15 @@
         loopBtn.style.cssText = `
           width: 16px;
           height: 16px;
-          border: 1px solid ${loopEnabled ? '#986c98' : 'transparent'};
-          background: ${loopEnabled ? '#986c98' : '#252727'};
+          border: 1px solid ${loopEnabled ? C.accent : 'transparent'};
+          background: ${loopEnabled ? C.accent : C.panelBg};
           border-radius: 3px;
           display: flex;
           align-items: center;
           justify-content: center;
           font-size: 10px;
           cursor: pointer;
-          color: ${loopEnabled ? '#1a1c1c' : '#aaabac'};
+          color: ${loopEnabled ? C.bg : C.text};
           flex-shrink: 0;
         `;
         loopBtn.innerHTML = '&#8634;';
@@ -852,15 +858,15 @@
         timerBtn.style.cssText = `
           width: 16px;
           height: 16px;
-          border: 1px solid ${timersEnabled ? '#986c98' : 'transparent'};
-          background: ${timersEnabled ? '#986c98' : '#252727'};
+          border: 1px solid ${timersEnabled ? C.accent : 'transparent'};
+          background: ${timersEnabled ? C.accent : C.panelBg};
           border-radius: 3px;
           display: flex;
           align-items: center;
           justify-content: center;
           font-size: 10px;
           cursor: pointer;
-          color: ${timersEnabled ? '#1a1c1c' : '#aaabac'};
+          color: ${timersEnabled ? C.bg : C.text};
           flex-shrink: 0;
         `;
         timerBtn.innerHTML = '&#9201;';
@@ -871,7 +877,7 @@
           saveTimerSettings();
           renderControls();
           if (timersEnabled) {
-            resetTimerForState(getSketchInfo().current);
+            resetTimerForState(getSketchInfoGlobal?.().current);
           } else {
             stopTimer();
           }
@@ -911,8 +917,9 @@
       statePanel.appendChild(statesContent);
       stateUIContainer.appendChild(statePanel);
       document.body.appendChild(stateUIContainer);
+      stateUITab = tab;
       document.body.appendChild(tab);
-      
+
       let isFixed = false;
       const rightArrow = '&#9654;';
       const leftArrow = '&#9664;';
@@ -951,7 +958,7 @@
       });
       
       function updateStateDisplay() {
-        const info = getSketchInfo();
+        const info = getSketchInfoGlobal?.();
         const states = info.states || [];
         const currentState = info.current;
         const stateNames = info.names || {};
@@ -973,13 +980,13 @@
             padding: 4px 8px;
             border-radius: 3px;
             cursor: pointer;
-            background: ${isActive ? '#986c98' : 'transparent'};
-            color: ${isActive ? '#1a1c1c' : '#aaabac'};
+            background: ${isActive ? C.accent : 'transparent'};
+            color: ${isActive ? C.bg : C.text};
             border: 1px solid transparent;
             transition: border-color 0.15s ease;
           `;
           stateItem.addEventListener('mouseenter', () => {
-            stateItem.style.borderColor = '#986c98';
+            stateItem.style.borderColor = C.accent;
           });
           stateItem.addEventListener('mouseleave', () => {
             stateItem.style.borderColor = 'transparent';
@@ -988,7 +995,7 @@
           
           stateItem.addEventListener('click', (e) => {
             e.stopPropagation();
-            const info2 = getSketchInfo();
+            const info2 = getSketchInfoGlobal?.();
             if (info2.actions && info2.actions.setState) {
               info2.actions.setState(stateKey);
             } else if (info2.actions && info2.actions.nextState) {
@@ -1007,7 +1014,7 @@
           timerDisplay.style.cssText = `
             font-family: 'JetBrains Mono', monospace;
             font-size: 10px;
-            color: ${isActive ? '#aaabac' : '#666'};
+            color: ${isActive ? C.text : '#666'};
             cursor: pointer;
             padding: 2px 4px;
             border-radius: 3px;
@@ -1024,9 +1031,9 @@
             input.min = 1;
             input.style.cssText = `
               width: 28px;
-              background: #252727;
-              color: #aaabac;
-              border: 1px solid #986c98;
+              background: ${C.panelBg};
+              color: ${C.text};
+              border: 1px solid ${C.accent};
               border-radius: 3px;
               font-family: 'JetBrains Mono', monospace;
               font-size: 10px;
@@ -1044,7 +1051,7 @@
               const newValue = parseInt(input.value) || 30;
               stateTimerSettings[stateKey] = newValue;
               saveTimerSettings();
-              if (stateKey === getSketchInfo().current) {
+              if (stateKey === getSketchInfoGlobal?.().current) {
                 currentTimerValue = newValue;
               }
               renderTimerDisplay();
@@ -1070,8 +1077,9 @@
       }
       
       loadTimerSettings();
-      const initialInfo = getSketchInfo();
+      const initialInfo = getSketchInfoGlobal?.();
       currentTimerValue = stateTimerSettings[initialInfo.current] || 30;
+      updateStateDisplayInner = updateStateDisplay;
       updateStateDisplay();
       if (timersEnabled) {
         startTimer();
@@ -1093,11 +1101,11 @@
       const panel = document.createElement('div');
       panel.id = 'palette-ui';
       panel.style.cssText = `
-        background: rgba(30, 30, 30, 0.95);
-        color: #aaabac;
+        background: ${C.fixedPanelBg};
+        color: ${C.text};
         font-family: 'JetBrains Mono', monospace;
         font-size: 12px;
-        border: 1px solid #3a3c3c;
+        border: 1px solid ${C.border};
         border-left: none;
         border-radius: 0 4px 4px 0;
         user-select: none;
@@ -1130,8 +1138,8 @@
         left: 0;
         top: 50%;
         transform: translateY(-50%);
-        background: rgba(30, 30, 30, 0.95);
-        color: #aaabac;
+        background: ${C.fixedPanelBg};
+        color: ${C.text};
         width: 30px;
         height: 50px;
         display: flex;
@@ -1142,7 +1150,7 @@
         user-select: none;
         z-index: 101;
         border-radius: 0 4px 4px 0;
-        border: 1px solid #3a3c3c;
+        border: 1px solid ${C.border};
         border-left: none;
         transition: border-color 0.15s ease;
       `;
@@ -1204,7 +1212,7 @@
             width: 80px;
             height: 16px;
             background: transparent;
-            color: #aaabac;
+            color: ${C.text};
             border: none;
             padding: 0;
             font-family: 'JetBrains Mono', monospace;
@@ -1230,7 +1238,7 @@
           `;
           delBtn.innerHTML = '×';
           delBtn.addEventListener('mouseenter', () => {
-            delBtn.style.color = '#c44';
+            delBtn.style.color = C.danger;
           });
           delBtn.addEventListener('mouseleave', () => {
             delBtn.style.color = '#666';
@@ -1270,20 +1278,20 @@
           align-items: center;
           justify-content: center;
           font-size: 16px;
-          color: #aaabac;
+          color: ${C.text};
           cursor: pointer;
           transition: border-color 0.15s ease;
           flex-shrink: 0;
         `;
         addIcon.innerHTML = '+';
         addIcon.addEventListener('mouseenter', () => {
-          addIcon.style.borderColor = '#986c98';
+          addIcon.style.borderColor = C.accent;
         });
         addIcon.addEventListener('mouseleave', () => {
           addIcon.style.borderColor = 'transparent';
         });
         addIcon.addEventListener('click', () => {
-          paletteColors.push({ name: 'color' + paletteColors.length, value: '#986c98' });
+          paletteColors.push({ name: 'color' + paletteColors.length, value: C.accent });
           saveColorsToStorage();
           if (p5Instance) {
             p5Instance.colors = getColorsObject();
@@ -1293,7 +1301,7 @@
         
         const addText = document.createElement('span');
         addText.style.cssText = `
-          color: #aaabac;
+          color: ${C.text};
           font-family: 'JetBrains Mono', monospace;
           font-size: 12px;
           flex: 1;
@@ -1309,6 +1317,8 @@
       contentWrapper.appendChild(colorsContainer);
       contentWrapper.appendChild(createAddButton());
       container.appendChild(panel);
+      paletteContainer = container;
+      paletteTab = tab;
       document.body.appendChild(container);
       document.body.appendChild(tab);
       
@@ -1320,7 +1330,7 @@
       tab.innerHTML = rightArrow;
       
       tab.addEventListener('mouseenter', () => {
-        tab.style.borderColor = '#986c98';
+        tab.style.borderColor = C.accent;
         if (!isFixed) {
           panel.style.transform = 'translateX(0)';
           panel.style.opacity = '1';
@@ -1328,7 +1338,7 @@
         }
       });
       tab.addEventListener('mouseleave', () => {
-        tab.style.borderColor = '#3a3c3c';
+        tab.style.borderColor = C.border;
         if (!isFixed) {
           panel.style.transform = 'translateX(-100%)';
           panel.style.opacity = '0';
@@ -1381,16 +1391,22 @@
       const secs = Math.floor(elapsedTime % 60).toString().padStart(2, '0');
       statusTime.textContent = mins + ':' + secs;
       statusState.textContent = isPlaying ? 'playing' : 'paused';
-      statusState.style.color = isPlaying ? '#986c98' : '#c44';
+      statusState.style.color = isPlaying ? C.accent : C.danger;
     }
 
     function togglePlay() {
       isPlaying = !isPlaying;
       playIcon.textContent = isPlaying ? '⏸' : '▶';
       
-      if (isPlaying && timersEnabled) {
-        startTimer();
-      } else if (!isPlaying) {
+      if (isPlaying) {
+        if (recordingArmed) {
+          startRecording();
+        }
+        if (timersEnabled) {
+          startTimer();
+          renderTimerDisplay();
+        }
+      } else {
         stopTimer();
       }
       
@@ -1399,7 +1415,15 @@
 
     function toggleRecord() {
       if (!isRecording) {
-        startRecording();
+        if (!recordingArmed) {
+          recordingArmed = true;
+          recordBtn.classList.add('armed');
+          recordIcon.textContent = '⬤';
+        } else {
+          recordingArmed = false;
+          recordBtn.classList.remove('armed');
+          recordIcon.textContent = '●';
+        }
       } else {
         stopRecording();
       }
@@ -1432,6 +1456,8 @@
       
       mediaRecorder.start();
       isRecording = true;
+      recordingArmed = false;
+      recordBtn.classList.remove('armed');
       recordBtn.classList.add('recording');
       recordIcon.textContent = '■';
     }
@@ -1441,7 +1467,9 @@
         mediaRecorder.stop();
       }
       isRecording = false;
+      recordingArmed = false;
       recordBtn.classList.remove('recording');
+      recordBtn.classList.remove('armed');
       recordIcon.textContent = '●';
     }
 
@@ -1471,6 +1499,7 @@
 
     loadSketch(0);
     createPaletteUI();
+    paletteUICreated = true;
     updateStatus();
   </script>
 </body>
