@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SCAVENGER DASHBOARD</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --bg: #1a1c1c;
+      --panel-bg: #151617;
+      --text: #aaabac;
+      --accent: #986c98;
+      --secondary: #8ab6bb;
+      --border: #3a3c3c;
+      --danger: #FF5050;
+      --cable: #d8a0d8;
+    }
+    
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden; 
+    }
+    
+    /* TOOLBAR (Top) */
+    #toolbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 20px;
+      background: linear-gradient(180deg, #222425 0%, var(--bg) 100%);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      user-select: none;
+      z-index: 1000;
+    }
+    
+    .btn {
+      background: #252727;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      outline: none;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    
+    .btn:hover { background: #2d2f30; border-color: var(--accent); color: var(--accent); }
+    .btn:active { transform: translateY(1px); }
+    .btn.active { border-color: var(--secondary); color: var(--secondary); background: rgba(138, 182, 187, 0.1); }
+    .btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+    
+    /* MAIN CANVAS (TILING ROOT) */
+    #canvas-container {
+      flex: 1;
+      min-height: 0; 
+      overflow: auto; /* Permite scroll vertical de toda la pagina */
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 10;
+      padding: 12px;
+      align-items: stretch;
+    }
+    
+    /* TILING LAYOUT ENGINE */
+    .tiling-split {
+      display: flex;
+      flex: 1 1 auto; 
+      width: 100%;
+      min-height: min-content; /* Permite crecimiento vertical */
+    }
+    .tiling-split.h { flex-direction: row; }
+    .tiling-split.v { flex-direction: column; }
+    
+    .tiling-pane {
+      position: relative;
+      display: flex; 
+      min-width: 50px;
+      min-height: min-content; 
+    }
+    
+    .tiling-split.h > .tiling-pane {
+      overflow-x: hidden; /* Domina el ancho */
+    }
+    .tiling-split.v > .tiling-pane {
+      flex-shrink: 0; /* Domina el alto: empuja al padre hacia abajo */
+    }
+    
+    /* HITBOX INVISIBLE DE SPLITTERS */
+    .tiling-splitter {
+      position: relative;
+      background: rgba(255,255,255,0.06);
+      z-index: 50;
+      transition: background 0.2s;
+    }
+    .tiling-split.h > .tiling-splitter { width: 1px; cursor: col-resize; height: 100%; }
+    .tiling-split.h > .tiling-splitter::after { content: ''; position: absolute; left: -5px; right: -5px; top: 0; bottom: 0; cursor: col-resize; z-index: 51; }
+    
+    .tiling-split.v > .tiling-splitter { height: 1px; cursor: row-resize; width: 100%; }
+    .tiling-split.v > .tiling-splitter::after { content: ''; position: absolute; top: -5px; bottom: -5px; left: 0; right: 0; cursor: row-resize; z-index: 51; }
+    
+    .tiling-splitter:hover, .tiling-splitter.dragging {
+      background: var(--secondary);
+      box-shadow: 0 0 0 2px rgba(138, 182, 187, 0.2);
+    }
+    
+    .tiling-leaf {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      min-height: 100%;
+      height: auto;
+      display: flex;
+      justify-content: center; /* Centrado absoluto */
+      align-items: center;
+      container-type: inline-size; /* Magia Viewport Horizontal */
+    }
+    
+    .tiling-leaf > [data-mx-id] {
+      width: 100%;
+      height: max-content; /* Crece lo que necesita crecer */
+      min-height: 10px;
+      display: block;
+    }
+    
+    /* LEAF OVERLAYS (THE + BUTTONS) */
+    .leaf-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 40;
+      background: rgba(0,0,0,0.05);
+      border: 1px dashed rgba(255,255,255,0.05);
+    }
+    body:not(.mode-wiring) .tiling-leaf:hover .leaf-overlay { opacity: 1; }
+    .leaf-btn {
+      position: absolute;
+      pointer-events: auto;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      display: flex; justify-content: center; align-items: center;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-size: 14px;
+    }
+    .leaf-btn:hover { background: var(--secondary); color: var(--bg); border-color: var(--secondary); }
+    .leaf-btn.add-t { top: 0; left: 50%; transform: translateX(-50%); width: 40px; height: 16px; border-radius: 0 0 4px 4px; border-top: none;}
+    .leaf-btn.add-b { bottom: 0; left: 50%; transform: translateX(-50%); width: 40px; height: 16px; border-radius: 4px 4px 0 0; border-bottom: none;}
+    .leaf-btn.add-l { left: 0; top: 50%; transform: translateY(-50%); width: 16px; height: 40px; border-radius: 0 4px 4px 0; border-left: none;}
+    .leaf-btn.add-r { right: 0; top: 50%; transform: translateY(-50%); width: 16px; height: 40px; border-radius: 4px 0 0 4px; border-right: none;}
+    
+    .leaf-btn.del { top: 8px; right: 8px; width: 20px; height: 20px; border-radius: 4px; color: #888; font-weight: bold; font-size: 10px;}
+    .leaf-btn.del:hover { background: var(--danger); color: #fff; border-color: var(--danger);}
+    
+    .leaf-big-add {
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--border);
+      border: 2px dashed var(--border);
+      font-size: 24px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex; justify-content: center; align-items: center;
+    }
+    .leaf-big-add:hover {
+      border-color: var(--secondary);
+      color: var(--secondary);
+      background: rgba(138, 182, 187, 0.1);
+      transform: scale(1.05);
+    }
+    
+    #drag-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999;
+      cursor: crosshair; display: none;
+    }
+
+    /* STATUSBAR (Bottom) */
+    #statusbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 20px;
+      background: var(--panel-bg);
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      user-select: none;
+      z-index: 1000;
+      flex-shrink: 0;
+    }
+    
+    .status-left, .status-right { display: flex; align-items: center; gap: 24px; }
+    .status-item { display: flex; align-items: center; gap: 6px; }
+    .status-label { color: #666; }
+    .status-value { color: var(--accent); font-weight: 500; }
+    
+    /* MODAL OVERLAY */
+    .hidden { display: none !important; }
+    
+    #dialog-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 2000;
+    }
+    
+    #dialog {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      width: 450px; max-height: 85vh; display: flex; flex-direction: column;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+    }
+    
+    #dialog-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px; border-bottom: 1px solid var(--border); font-size: 14px;
+      text-transform: uppercase; letter-spacing: 1px; user-select: none;
+      color: var(--accent); font-weight: bold;
+    }
+    
+    #dialog-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    
+    /* SYSTEM MENU STYLES */
+    .sys-cat-title { margin: 0; padding: 5px 0 0; color: var(--accent); text-transform: uppercase; font-size: 14px; cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center; }
+    .sys-cat-title::after { content: '▼'; font-size: 10px; opacity: 0.8; transition: transform 0.2s; }
+    .sys-cat-title.collapsed::after { transform: rotate(-90deg); }
+    .sys-cat-content { display: flex; flex-direction: column; gap: 5px; overflow: visible; }
+    .sys-cat-content.collapsed { display: none; }
+    .sys-row { display: flex; justify-content: space-between; align-items: center; padding: 0 8px; height: 32px; box-sizing: border-box; border-radius: 4px; transition: all 0.2s; margin: 0; }
+    .sys-row-hoverable { cursor: pointer; }
+    .sys-row-hoverable:hover { background: rgba(255,255,255,0.05); }
+    .sys-row-hoverable:hover .sys-row-lbl { color: var(--secondary); }
+    .sys-row-lbl { transition: color 0.2s; pointer-events: none; font-size: 12px; }
+    .sys-row-url { color: #666; font-size: 10px; pointer-events: none; transition: color 0.2s; }
+    .sys-hr { width: 100%; border: 0; border-top: 1px solid var(--border); margin: 5px 0; }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+    /* WIRING UI & CABLES */
+    #wire-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 100; }
+    .cable-path { fill: none; stroke: var(--cable); stroke-width: 3px; stroke-linecap: round; opacity: 0.6; transition: stroke-width 0.2s, opacity 0.2s; }
+    .cable-path.active { stroke: var(--secondary); stroke-width: 4px; opacity: 1; filter: drop-shadow(0 0 5px var(--secondary)); }
+    .cable-temp { stroke-dasharray: 6 6; stroke: var(--secondary); opacity: 0.8; animation: dash 1s linear infinite; }
+    @keyframes dash { to { stroke-dashoffset: -12; } }
+
+    #wiring-tooltip { display: none; position: fixed; background: var(--accent); color: var(--bg); padding: 2px 6px; font-size: 10px; font-weight: bold; pointer-events: none; z-index: 9999; border-radius: 3px; text-transform: uppercase; }
+
+    /* COMPACT FLOATING PANELS */
+    .panel-floating { position: fixed; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.9); z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
+    #wiring-panel { width: 300px; }
+    #disconnect-panel { width: 200px; }
+    .wp-title { color: var(--accent); font-weight: bold; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid var(--border); padding-bottom: 4px;}
+    .wp-row { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; flex-wrap: wrap;}
+    .wp-input { flex: 1; background: #252727; color: var(--text); border: 1px solid var(--border); padding: 6px; font-family: inherit; font-size: 11px; outline: none; border-radius: 3px; width: 100%;}
+    .wp-input:focus { border-color: var(--secondary); }
+    label { cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 2px 4px; border-radius: 3px;}
+    label:hover { background: rgba(255,255,255,0.05); color: #fff;}
+    input[type="radio"] { accent-color: var(--secondary); margin: 0; }
+    .node-label { font-weight: bold; color: var(--secondary); }
+    
+    /* TOAST NOTIFICATION */
+    .toast {
+        position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+        background: var(--accent); color: var(--bg); padding: 8px 16px; 
+        border-radius: 4px; z-index: 99999; font-weight: bold; font-size: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5); animation: fadein 0.3s;
+    }
+    @keyframes fadein { from { top: 0; opacity: 0; } to { top: 20px; opacity: 1; } }
+
+  </style>
+</head>
+<body>
+
+  <div id="toolbar">
+    <button class="btn" id="btn-sys" title="System Routes"><span>[ SYS ]</span></button>
+    <button class="btn" id="btn-mode" title="Toggle Wiring Mode"><span>[ VIEW MODE ]</span></button>
+    <button class="btn danger" id="btn-clear" title="Clear Workspace" style="margin-left: auto;"><span>[ CLEAR WORKSPACE ]</span></button>
+  </div>
+  
+  <div id="canvas-container"></div>
+  
+  <div id="statusbar">
+    <div class="status-left">
+      <div class="status-item"><span class="status-label">nodes</span><span class="status-value" id="status-nodes">0</span></div>
+      <div class="status-item"><span class="status-label">channels</span><span class="status-value" id="status-wires">0</span></div>
+    </div>
+    <div class="status-right">
+      <div class="status-item"><span class="status-label">mode</span><span class="status-value" id="status-mode">view</span></div>
+    </div>
+  </div>
+
+  <div id="drag-overlay"></div>
+
+  <svg id="wire-canvas" class="hidden">
+    <path id="temp-wire" class="cable-path cable-temp hidden" d="M0 0"></path>
+  </svg>
+
+  <div id="wiring-tooltip"></div>
+
+  <div id="wiring-panel" class="panel-floating hidden">
+    <div class="wp-title">Patch Cable</div>
+    <div class="wp-row" style="margin-bottom: 4px;">
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+        <div style="color: #666; font-size: 10px;">Source: <span class="node-label" id="wp-src-lbl"></span></div>
+        <label><input type="radio" name="w-src" value="sends" checked> SENDS</label>
+        <label><input type="radio" name="w-src" value="trigger"> TRIGGER</label>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+        <div style="color: #666; font-size: 10px;">Target: <span class="node-label" id="wp-tgt-lbl"></span></div>
+        <label><input type="radio" name="w-tgt" value="receives" checked> RECEIVES</label>
+        <label><input type="radio" name="w-tgt" value="action"> ACTION</label>
+      </div>
+    </div>
+    <div class="wp-row hidden" id="w-action-row" style="margin-bottom: 2px;">
+      <select id="w-action-type" class="wp-input">
+        <option value="clone">Clone Element</option>
+        <option value="delete">Delete Element</option>
+        <option value="toggle">Toggle Visibility</option>
+        <option value="hide">Hide Element</option>
+        <option value="show">Show Element</option>
+      </select>
+    </div>
+    <div class="wp-row">
+      <input type="text" class="wp-input" id="w-channel" placeholder="channel-name (e.g. create-note)">
+    </div>
+    <div class="wp-row" style="justify-content: space-between; margin-top: 4px;">
+      <button class="btn" id="w-save" style="border-color: var(--secondary); color: var(--secondary); flex: 2;">PATCH CABLE</button>
+      <button class="btn" id="w-cancel" style="flex: 1;">CANCEL</button>
+    </div>
+  </div>
+
+  <div id="disconnect-panel" class="panel-floating hidden">
+    <div class="wp-title">Node Status</div>
+    <div class="wp-row" style="color: #666; margin-bottom: 4px;">Channel: <span class="node-label" id="dp-channel-lbl">N/A</span></div>
+    <div class="wp-row" style="flex-direction: column; gap: 6px; width: 100%;">
+      <button class="btn danger" id="dp-remove" style="width: 100%;">UNWIRE NODE</button>
+      <button class="btn" id="dp-cancel" style="width: 100%;">CLOSE</button>
+    </div>
+  </div>
+
+  <div id="dialog-overlay" class="hidden">
+    <div id="dialog">
+      <div id="dialog-header"><span>System Pathways</span><button class="btn" id="dialog-close" style="padding: 4px 8px;">✕</button></div>
+      <div id="dialog-body" id="sys-menu-content"></div>
+    </div>
+  </div>
+
+  <script>
+    // --- STATE MANAGEMENT ---
+    const STORE_LAYOUT = 'mx_layout';
+    const STORE_COMPONENTS = 'mx_components'; 
+    const STORE_WIRING = 'mx_wiring';
+    
+    function generateId() { return 'id_' + Math.random().toString(36).substr(2, 9); }
+
+    let components = [];
+    let layoutTree = null;
+    let wiringRegistry = {};
+    let currentMode = 'view';
+    window.hoveredLeaf = null;
+    window.pendingPasteTarget = null; 
+
+    let saveTimeout = null;
+    let cableRenderFrame = null;
+
+    try { components = JSON.parse(localStorage.getItem(STORE_COMPONENTS)) || []; } catch(e) {}
+    try { wiringRegistry = JSON.parse(localStorage.getItem(STORE_WIRING)) || {}; } catch(e) {}
+    try { layoutTree = JSON.parse(localStorage.getItem(STORE_LAYOUT)); } catch(e) {}
+
+    let needsWipe = Object.keys(wiringRegistry).some(k => k.startsWith('scv-'));
+    if (!layoutTree || !layoutTree.type || needsWipe) {
+        layoutTree = { id: generateId(), type: 'leaf', mxId: null };
+        components = []; wiringRegistry = {};
+        localStorage.setItem(STORE_COMPONENTS, JSON.stringify(components));
+        localStorage.setItem(STORE_WIRING, JSON.stringify(wiringRegistry));
+        localStorage.setItem(STORE_LAYOUT, JSON.stringify(layoutTree));
+    }
+
+    let activeReceivers = []; 
+    let activeActions = [];
+    const rxHub = new EventTarget();
+
+    // --- SYSTEM MENU ---
+    const systemRoutes = {
+      "CORE & CONFIG": [ { label: "Experiments Lab", url: "chrome://flags" }, { label: "System Diagnostics", url: "chrome://system" }, { label: "Version & CL Args", url: "chrome://version" }, { label: "GPU Status", url: "chrome://gpu" } ],
+      "STORAGE & STATE": [ { label: "IndexedDB Inspector", url: "chrome://indexeddb-internals" }, { label: "Disk Quota & Usage", url: "chrome://quota-internals" } ],
+      "PROTOCOLS": [ { label: "Local File Explorer", url: "file:///" } ]
+    };
+
+    const dialogOverlay = document.getElementById('dialog-overlay');
+    const dialogBody = document.getElementById('dialog-body');
+    const canvasContainer = document.getElementById('canvas-container');
+    const wireCanvas = document.getElementById('wire-canvas');
+    const tempWire = document.getElementById('temp-wire');
+
+    // MOTOR CABLES REACTIVO: Redibuja automáticamente a 60fps si algo muta en el DOM
+    const domObserver = new MutationObserver(() => requestCableRender());
+    domObserver.observe(canvasContainer, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+
+    function buildSystemMenu() {
+      dialogBody.innerHTML = '';
+      Object.keys(systemRoutes).forEach(category => {
+        let h4 = document.createElement('h4'); h4.className = 'sys-cat-title collapsed'; h4.textContent = category; dialogBody.appendChild(h4);
+        let cWrap = document.createElement('div'); cWrap.className = 'sys-cat-content collapsed';
+        h4.onclick = () => { h4.classList.toggle('collapsed'); cWrap.classList.toggle('collapsed'); };
+
+        systemRoutes[category].forEach(route => {
+            let row = document.createElement('div'); row.className = 'sys-row sys-row-hoverable';
+            row.innerHTML = `<span class="sys-row-lbl">${route.label}</span><span class="sys-row-url">${route.url}</span>`;
+            row.onclick = async () => {
+                try { window.open(route.url, '_blank'); } catch(e) {}
+                try {
+                    await navigator.clipboard.writeText(route.url);
+                    const urlLbl = row.querySelector('.sys-row-url'); const originalText = urlLbl.textContent;
+                    urlLbl.textContent = 'COPIED!'; urlLbl.style.color = 'var(--secondary)';
+                    setTimeout(() => { urlLbl.textContent = originalText; urlLbl.style.color = ''; }, 1500);
+                } catch (err) {}
+            };
+            cWrap.appendChild(row);
+        });
+        cWrap.appendChild(document.createElement('hr')).className = 'sys-hr';
+        dialogBody.appendChild(cWrap);
+      });
+    }
+
+    document.getElementById('btn-sys').addEventListener('click', () => dialogOverlay.classList.remove('hidden'));
+    document.getElementById('dialog-close').addEventListener('click', () => dialogOverlay.classList.add('hidden'));
+    dialogOverlay.addEventListener('click', (e) => { if (e.target === dialogOverlay) dialogOverlay.classList.add('hidden'); });
+
+    // --- LEY DE INERCIA: Desactivador de Links ---
+    function scrubLinks(shadow) {
+        shadow.querySelectorAll('a').forEach(a => {
+            if (a.getAttribute('href') !== 'javascript:void(0);') {
+                a.setAttribute('data-orig-href', a.getAttribute('href') || '');
+                a.setAttribute('href', 'javascript:void(0);');
+            }
+        });
+    }
+
+    // --- UTILS: MOTOR DE TATUAJES GEOMÉTRICOS ---
+    function getSelector(el) {
+        if (!el.dataset.mxWireId) {
+            el.dataset.mxWireId = 'wire_' + Math.random().toString(36).substr(2, 9);
+            debouncedSave(); 
+        }
+        return `[data-mx-wire-id="${el.dataset.mxWireId}"]`;
+    }
+
+    function getWiredElements(root, selector) {
+        try { return Array.from(root.querySelectorAll(selector)); } catch(e) { return []; }
+    }
+
+    function updateStatus() {
+        document.getElementById('status-nodes').textContent = components.length;
+        let uniqueChannels = new Set();
+        Object.values(wiringRegistry).forEach(nodeWires => { Object.values(nodeWires).forEach(w => uniqueChannels.add(w.channel)); });
+        document.getElementById('status-wires').textContent = uniqueChannels.size;
+        document.getElementById('status-mode').textContent = currentMode;
+        document.getElementById('status-mode').style.color = currentMode === 'wiring' ? 'var(--secondary)' : 'var(--accent)';
+    }
+
+    // --- TILING LAYOUT ENGINE & DEBOUNCE PERFORMANCE ---
+    function executeSave() {
+        localStorage.setItem(STORE_LAYOUT, JSON.stringify(layoutTree));
+        
+        const stateToSave = [];
+        const nodes = document.querySelectorAll('[data-mx-id]');
+        nodes.forEach(node => {
+            if(!node.shadowRoot) return;
+            node.shadowRoot.querySelectorAll('input, textarea, select').forEach(el => {
+                if(el.tagName === 'TEXTAREA') el.textContent = el.value;
+                else el.setAttribute('value', el.value);
+                if(el.type === 'checkbox' || el.type === 'radio') {
+                    if(el.checked) el.setAttribute('checked', 'checked'); else el.removeAttribute('checked');
+                }
+            });
+            const mxId = node.dataset.mxId;
+            const orig = components.find(c => c.mxId === mxId);
+            if(orig) stateToSave.push({ tag: orig.tag, mxId: mxId, script: orig.script, shadowHTML: node.shadowRoot.innerHTML });
+        });
+        
+        components.forEach(c => { if(!stateToSave.find(s => s.mxId === c.mxId)) stateToSave.push(c); });
+        components = stateToSave;
+        localStorage.setItem(STORE_COMPONENTS, JSON.stringify(components));
+    }
+
+    function debouncedSave() {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => executeSave(), 500); 
+    }
+
+    function renderWorkspace() {
+        canvasContainer.innerHTML = '';
+        renderTree(layoutTree, canvasContainer);
+        updateStatus();
+    }
+
+    function renderTree(node, container) {
+        if (node.type === 'split') {
+            const splitDiv = document.createElement('div'); splitDiv.className = `tiling-split ${node.dir}`;
+            const paneA = document.createElement('div'); paneA.className = 'tiling-pane'; paneA.style.flexBasis = `${node.ratio}%`;
+            renderTree(node.a, paneA);
+            
+            const splitter = document.createElement('div'); splitter.className = 'tiling-splitter';
+            splitter.addEventListener('mousedown', (e) => {
+                window.dragSplitter = { node, paneA, paneB, startX: e.clientX, startY: e.clientY, startRatio: node.ratio, isHorizontal: node.dir === 'h', rect: splitDiv.getBoundingClientRect() };
+                document.getElementById('drag-overlay').style.display = 'block'; splitter.classList.add('dragging');
+            });
+            
+            const paneB = document.createElement('div'); paneB.className = 'tiling-pane'; paneB.style.flexBasis = `${100 - node.ratio}%`;
+            renderTree(node.b, paneB);
+            
+            splitDiv.appendChild(paneA); splitDiv.appendChild(splitter); splitDiv.appendChild(paneB);
+            container.appendChild(splitDiv);
+        } else {
+            const leafDiv = document.createElement('div'); leafDiv.className = 'tiling-leaf';
+            
+            if (node.mxId) {
+                const comp = components.find(c => c.mxId === node.mxId);
+                if (comp) {
+                    if (!window.__mx_scripts_injected) window.__mx_scripts_injected = new Set();
+                    if (!window.__mx_scripts_injected.has(comp.tag)) {
+                        const newScript = document.createElement('script'); 
+                        newScript.type = 'module';
+                        newScript.textContent = comp.script; 
+                        document.body.appendChild(newScript);
+                        window.__mx_scripts_injected.add(comp.tag);
+                    }
+                    
+                    const el = document.createElement(comp.tag); el.dataset.mxId = comp.mxId;
+                    
+                    customElements.whenDefined(comp.tag).then(() => {
+                        if(el.shadowRoot && comp.shadowHTML) el.shadowRoot.innerHTML = comp.shadowHTML;
+                        scrubLinks(el.shadowRoot);
+                        applyWiringEngine();
+                        if(currentMode === 'wiring') { applyWiringState(el.shadowRoot, true); requestCableRender(); }
+                    });
+                    
+                    leafDiv.appendChild(el);
+                    
+                    const overlay = document.createElement('div'); overlay.className = 'leaf-overlay';
+                    ['top', 'bottom', 'left', 'right'].forEach(dir => {
+                        const btn = document.createElement('button'); btn.className = `leaf-btn add-${dir.charAt(0)}`; btn.textContent = '+';
+                        btn.onclick = () => handleAddClick(node, dir); overlay.appendChild(btn);
+                    });
+                    
+                    const delBtn = document.createElement('button'); delBtn.className = 'leaf-btn del'; delBtn.textContent = '✕';
+                    delBtn.onclick = () => { removeLeafFromTree(layoutTree, node.id); executeSave(); renderWorkspace(); requestCableRender(); };
+                    overlay.appendChild(delBtn); leafDiv.appendChild(overlay);
+                }
+            } else {
+                const btn = document.createElement('button'); btn.className = 'leaf-big-add'; btn.textContent = '+';
+                btn.onclick = () => handleAddClick(node, 'center'); leafDiv.appendChild(btn);
+            }
+            
+            leafDiv.addEventListener('mouseenter', () => window.hoveredLeaf = node);
+            leafDiv.addEventListener('mouseleave', () => { if(window.hoveredLeaf === node) window.hoveredLeaf = null; });
+            container.appendChild(leafDiv);
+        }
+    }
+
+    document.addEventListener('mousemove', (e) => {
+        if (window.dragSplitter) {
+            const { isHorizontal, startX, startY, startRatio, rect, node, paneA, paneB } = window.dragSplitter;
+            let deltaPercent = isHorizontal ? ((e.clientX - startX) / rect.width) * 100 : ((e.clientY - startY) / rect.height) * 100;
+            let newRatio = Math.max(5, Math.min(95, startRatio + deltaPercent));
+            node.ratio = newRatio; paneA.style.flexBasis = `${newRatio}%`; paneB.style.flexBasis = `${100 - newRatio}%`;
+            requestCableRender();
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (window.dragSplitter) {
+            document.querySelector('.tiling-splitter.dragging')?.classList.remove('dragging');
+            window.dragSplitter = null; document.getElementById('drag-overlay').style.display = 'none'; executeSave();
+        }
+    });
+
+    function removeLeafFromTree(root, targetId) {
+        if (root.id === targetId) { root.type = 'leaf'; root.mxId = null; return true; }
+        function traverse(node) {
+            if (node.type === 'split') {
+                if (node.a.id === targetId) { Object.assign(node, node.b); return true; }
+                if (node.b.id === targetId) { Object.assign(node, node.a); return true; }
+                if (traverse(node.a)) return true;
+                if (traverse(node.b)) return true;
+            }
+            return false;
+        }
+        traverse(root);
+    }
+
+    // --- PHASE 1: PASTE ENGINE & ASYNC FIX ---
+    function showPasteToast() {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = "Please press Ctrl+V to paste here (Browser security restriction)";
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3500);
+    }
+
+    async function handleAddClick(leafNode, direction) {
+        try {
+            const text = await navigator.clipboard.readText();
+            if (!text || !text.includes('<scv-')) return showPasteToast();
+            handlePasteData(text, leafNode, direction);
+        } catch (e) {
+            window.pendingPasteTarget = { node: leafNode, direction };
+            showPasteToast();
+        }
+    }
+
+    function handlePasteData(text, targetLeaf = null, direction = 'right') {
+        const temp = document.createElement('div'); temp.innerHTML = text;
+        const el = temp.firstElementChild; const script = temp.querySelector('script');
+        if (!el || !script) return;
+
+        const tag = el.tagName.toLowerCase();
+        const mxId = 'inst_' + Math.random().toString(36).substr(2, 9);
+        
+        let scriptContent = script.textContent.replace(/@media/g, '@container');
+
+        if (!window.__mx_scripts_injected) window.__mx_scripts_injected = new Set();
+        if (!window.__mx_scripts_injected.has(tag)) {
+            const newScript = document.createElement('script'); 
+            newScript.type = 'module';
+            newScript.textContent = scriptContent;
+            document.body.appendChild(newScript); window.__mx_scripts_injected.add(tag);
+        }
+
+        components.push({ tag, mxId, script: scriptContent, shadowHTML: '' });
+
+        if (!targetLeaf) {
+            function findEmpty(n) {
+                if (n.type === 'leaf' && !n.mxId) return n;
+                if (n.type === 'split') return findEmpty(n.a) || findEmpty(n.b);
+                return null;
+            }
+            targetLeaf = window.hoveredLeaf || findEmpty(layoutTree) || layoutTree;
+        }
+
+        if (!targetLeaf.mxId && targetLeaf.type === 'leaf') {
+            targetLeaf.mxId = mxId;
+        } else {
+            const isHorizontal = (direction === 'left' || direction === 'right');
+            const newNode = { id: generateId(), type: 'leaf', mxId: mxId };
+            const oldNode = { id: generateId(), type: 'leaf', mxId: targetLeaf.mxId };
+            
+            targetLeaf.type = 'split'; targetLeaf.dir = isHorizontal ? 'h' : 'v'; targetLeaf.ratio = 50; delete targetLeaf.mxId;
+            if (direction === 'left' || direction === 'top') { targetLeaf.a = newNode; targetLeaf.b = oldNode; } 
+            else { targetLeaf.a = oldNode; targetLeaf.b = newNode; }
+        }
+        
+        executeSave(); renderWorkspace();
+
+        customElements.whenDefined(tag).then(() => {
+            const liveEl = document.querySelector(`[data-mx-id="${mxId}"]`);
+            if (liveEl && liveEl.shadowRoot) {
+                scrubLinks(liveEl.shadowRoot);
+                const compIndex = components.findIndex(c => c.mxId === mxId);
+                if (compIndex > -1) {
+                    components[compIndex].shadowHTML = liveEl.shadowRoot.innerHTML;
+                    executeSave();
+                    applyWiringEngine();
+                    if (currentMode === 'wiring') { applyWiringState(liveEl.shadowRoot, true); requestCableRender(); }
+                }
+            }
+        });
+    }
+
+    document.addEventListener('paste', (e) => {
+        if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        const text = (e.clipboardData || window.clipboardData).getData('text');
+        if (text && text.includes('<scv-') && text.includes('customElements.define')) {
+            e.preventDefault();
+            if (window.pendingPasteTarget) {
+                handlePasteData(text, window.pendingPasteTarget.node, window.pendingPasteTarget.direction);
+                window.pendingPasteTarget = null;
+            } else {
+                handlePasteData(text);
+            }
+        }
+    });
+
+    document.getElementById('btn-clear').addEventListener('click', () => {
+        if(confirm("Destroy visual workspace and wiring?")) {
+            layoutTree = { id: generateId(), type: 'leaf', mxId: null };
+            components = []; wiringRegistry = {};
+            executeSave(); renderWorkspace(); requestCableRender();
+        }
+    });
+
+    // --- PHASE 2: SCANNER & CABLES (WIRING MODE) ---
+    const btnMode = document.getElementById('btn-mode');
+    const tooltip = document.getElementById('wiring-tooltip');
+    const wPanel = document.getElementById('wiring-panel');
+    const dPanel = document.getElementById('disconnect-panel');
+    const wActionRow = document.getElementById('w-action-row');
+    
+    let dragStartNode = null; let dragEndNode = null;
+
+    btnMode.addEventListener('click', toggleMode);
+
+    document.querySelectorAll('input[name="w-tgt"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if(e.target.value === 'action') wActionRow.classList.remove('hidden'); else wActionRow.classList.add('hidden');
+        });
+    });
+
+    function toggleMode() {
+        currentMode = currentMode === 'view' ? 'wiring' : 'view';
+        btnMode.innerHTML = `<span>[ ${currentMode.toUpperCase()} MODE ]</span>`;
+        
+        if (currentMode === 'wiring') {
+            btnMode.classList.add('active'); document.body.classList.add('mode-wiring'); wireCanvas.classList.remove('hidden'); requestCableRender();
+        } else {
+            btnMode.classList.remove('active'); document.body.classList.remove('mode-wiring');
+            wPanel.classList.add('hidden'); dPanel.classList.add('hidden'); wireCanvas.classList.add('hidden'); tempWire.classList.add('hidden');
+        }
+        
+        document.querySelectorAll('[data-mx-id]').forEach(node => { if (node.shadowRoot) applyWiringState(node.shadowRoot, currentMode === 'wiring'); });
+        updateStatus();
+    }
+
+    function applyWiringState(shadow, isWiring) {
+        if (isWiring) {
+            if (!shadow.getElementById('mx-wiring-style')) {
+                const style = document.createElement('style'); style.id = 'mx-wiring-style';
+                style.textContent = `
+                    .mx-wired-node { outline: 2px dashed var(--accent, #986c98) !important; outline-offset: -2px; cursor: crosshair !important; }
+                    .mx-wired-node:hover { outline: 2px solid var(--secondary, #8ab6bb) !important; background: rgba(138, 182, 187, 0.15) !important; }
+                `;
+                shadow.appendChild(style);
+            }
+            // TARGET UNIVERSAL MEJORADO
+            const targets = shadow.querySelectorAll('button, input, textarea, select, h1, h2, h3, h4, h5, h6, p, img, a, span, tr, td, th, div, tbody, thead, table, form, label, ul, li, ol, section, article, header, footer, nav, main, figure, figcaption, details, summary, iframe, canvas');
+            targets.forEach(t => t.classList.add('mx-wired-node'));
+        } else {
+            const style = shadow.getElementById('mx-wiring-style'); if (style) style.remove();
+            const targets = shadow.querySelectorAll('.mx-wired-node'); targets.forEach(t => t.classList.remove('mx-wired-node'));
+            tooltip.style.display = 'none';
+        }
+    }
+
+    function getBezier(x1, y1, x2, y2) {
+        const dx = Math.abs(x2 - x1); const offset = Math.max(dx * 0.5, 50);
+        return `M ${x1} ${y1} C ${x1 + offset} ${y1}, ${x2 - offset} ${y2}, ${x2} ${y2}`;
+    }
+
+    function getCenter(el) {
+        const rect = el.getBoundingClientRect();
+        if (rect.width === 0 && rect.height === 0) return null;
+        return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    }
+
+    function requestCableRender() {
+        if (currentMode !== 'wiring') return;
+        cancelAnimationFrame(cableRenderFrame);
+        cableRenderFrame = requestAnimationFrame(renderCables);
+    }
+
+    function renderCables() {
+        Array.from(wireCanvas.querySelectorAll('.cable-static')).forEach(c => c.remove());
+
+        const channelMap = {}; const nodes = document.querySelectorAll('[data-mx-id]');
+        for (let i = 0; i < nodes.length; i++) {
+            const scvNode = nodes[i]; const mxId = scvNode.dataset.mxId;
+            const nodeWiring = wiringRegistry[mxId]; if (!nodeWiring) continue;
+            
+            Object.keys(nodeWiring).forEach(selector => {
+                const config = nodeWiring[selector]; const els = getWiredElements(scvNode.shadowRoot, selector);
+                els.forEach(el => {
+                    if(!channelMap[config.channel]) channelMap[config.channel] = { sources: [], targets: [] };
+                    if(config.mode === 'sends' || config.mode === 'trigger') channelMap[config.channel].sources.push(el);
+                    else channelMap[config.channel].targets.push(el);
+                });
+            });
+        }
+
+        Object.keys(channelMap).forEach(ch => {
+            const group = channelMap[ch];
+            group.sources.forEach(src => {
+                const p1 = getCenter(src);
+                if (!p1) return; 
+                group.targets.forEach(tgt => {
+                    const p2 = getCenter(tgt);
+                    if (!p2) return; 
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', getBezier(p1.x, p1.y, p2.x, p2.y)); path.setAttribute('class', 'cable-path cable-static');
+                    wireCanvas.appendChild(path);
+                });
+            });
+        });
+        wireCanvas.appendChild(tempWire);
+    }
+
+    window.addEventListener('scroll', () => { requestCableRender(); }, true);
+    window.addEventListener('resize', () => { requestCableRender(); });
+
+    document.addEventListener('mousedown', (e) => {
+        if (currentMode !== 'wiring') return;
+        if(e.target.closest('.panel-floating') || e.target.closest('#toolbar') || e.target.closest('#statusbar')) return;
+
+        wPanel.classList.add('hidden'); dPanel.classList.add('hidden');
+
+        const path = e.composedPath(); const target = path.find(el => el.classList && el.classList.contains('mx-wired-node'));
+        if (target) {
+            e.preventDefault(); e.stopPropagation();
+            const scvNode = path.find(el => el.tagName && el.tagName.toLowerCase().startsWith('scv-')); if (!scvNode) return;
+            const pt = getCenter(target);
+            if (!pt) return; 
+            dragStartNode = { el: target, mxId: scvNode.dataset.mxId, selector: getSelector(target), x: pt.x, y: pt.y, isDrag: false };
+            tempWire.classList.remove('hidden'); tempWire.setAttribute('d', `M ${pt.x} ${pt.y} L ${e.clientX} ${e.clientY}`);
+        }
+    });
+
+    document.addEventListener('mousemove', e => {
+        if(currentMode !== 'wiring') return;
+        if (dragStartNode) {
+            dragStartNode.isDrag = true; tempWire.setAttribute('d', getBezier(dragStartNode.x, dragStartNode.y, e.clientX, e.clientY)); tooltip.style.display = 'none';
+        } else {
+            const path = e.composedPath(); const target = path.find(el => el.classList && el.classList.contains('mx-wired-node'));
+            if (target && wPanel.classList.contains('hidden') && dPanel.classList.contains('hidden')) {
+                tooltip.textContent = `<${target.tagName.toLowerCase()}>`; tooltip.style.display = 'block'; tooltip.style.left = (e.clientX + 15) + 'px'; tooltip.style.top = (e.clientY + 15) + 'px';
+            } else { tooltip.style.display = 'none'; }
+        }
+    });
+
+    document.addEventListener('mouseup', (e) => {
+        if (currentMode !== 'wiring' || !dragStartNode) return;
+        
+        if(e.target.closest('.panel-floating')) return;
+
+        tempWire.classList.add('hidden');
+        const path = e.composedPath(); const target = path.find(el => el.classList && el.classList.contains('mx-wired-node'));
+
+        if (!dragStartNode.isDrag) {
+            const existing = wiringRegistry[dragStartNode.mxId] && wiringRegistry[dragStartNode.mxId][dragStartNode.selector];
+            if (existing) {
+                document.getElementById('dp-channel-lbl').textContent = existing.channel; dPanel.classList.remove('hidden');
+                let pX = e.clientX + 15; let pY = e.clientY + 15;
+                if (pX + 200 > window.innerWidth) pX = window.innerWidth - 210; if (pY + 110 > window.innerHeight) pY = window.innerHeight - 120;
+                dPanel.style.left = pX + 'px'; dPanel.style.top = pY + 'px';
+            }
+            dragStartNode = null; return;
+        }
+
+        if (target && target !== dragStartNode.el) {
+            const scvNode = path.find(el => el.tagName && el.tagName.toLowerCase().startsWith('scv-'));
+            if (scvNode) {
+                dragEndNode = { el: target, mxId: scvNode.dataset.mxId, selector: getSelector(target) };
+
+                document.getElementById('wp-src-lbl').textContent = `<${dragStartNode.el.tagName.toLowerCase()}>`;
+                document.getElementById('wp-tgt-lbl').textContent = `<${target.tagName.toLowerCase()}>`;
+                document.querySelector('input[name="w-src"][value="sends"]').checked = true; document.querySelector('input[name="w-tgt"][value="receives"]').checked = true;
+                wActionRow.classList.add('hidden'); 
+                
+                let prefill = '';
+                const exStart = wiringRegistry[dragStartNode.mxId] && wiringRegistry[dragStartNode.mxId][dragStartNode.selector];
+                const exEnd = wiringRegistry[dragEndNode.mxId] && wiringRegistry[dragEndNode.mxId][dragEndNode.selector];
+                if (exStart) prefill = exStart.channel; else if (exEnd) prefill = exEnd.channel;
+                document.getElementById('w-channel').value = prefill;
+
+                wPanel.classList.remove('hidden'); document.getElementById('w-channel').focus();
+                
+                let pX = e.clientX + 15; let pY = e.clientY + 15;
+                if (pX + 300 > window.innerWidth) pX = window.innerWidth - 310; if (pY + 200 > window.innerHeight) pY = window.innerHeight - 210;
+                wPanel.style.left = pX + 'px'; wPanel.style.top = pY + 'px';
+            } else { dragStartNode = null; }
+        } else { dragStartNode = null; }
+    });
+
+    document.getElementById('w-cancel').addEventListener('click', () => { wPanel.classList.add('hidden'); dragStartNode = null; dragEndNode = null; });
+    document.getElementById('dp-cancel').addEventListener('click', () => { dPanel.classList.add('hidden'); dragStartNode = null; });
+    
+    document.getElementById('w-save').addEventListener('click', () => {
+        if(!dragStartNode || !dragEndNode) return;
+        const srcMode = document.querySelector('input[name="w-src"]:checked').value; const tgtMode = document.querySelector('input[name="w-tgt"]:checked').value;
+        const actionType = document.getElementById('w-action-type').value; const channel = document.getElementById('w-channel').value.trim();
+        
+        if(!channel) return alert("Channel name required");
+
+        if(!wiringRegistry[dragStartNode.mxId]) wiringRegistry[dragStartNode.mxId] = {};
+        wiringRegistry[dragStartNode.mxId][dragStartNode.selector] = { mode: srcMode, channel: channel, actionType: null };
+        if(!wiringRegistry[dragEndNode.mxId]) wiringRegistry[dragEndNode.mxId] = {};
+        wiringRegistry[dragEndNode.mxId][dragEndNode.selector] = { mode: tgtMode, channel: channel, actionType: tgtMode === 'action' ? actionType : null };
+        
+        localStorage.setItem(STORE_WIRING, JSON.stringify(wiringRegistry));
+        wPanel.classList.add('hidden'); dragStartNode = null; dragEndNode = null;
+        applyWiringEngine(); requestCableRender(); updateStatus();
+    });
+
+    document.getElementById('dp-remove').addEventListener('click', () => {
+        if(!dragStartNode || !wiringRegistry[dragStartNode.mxId]) return;
+        delete wiringRegistry[dragStartNode.mxId][dragStartNode.selector];
+        localStorage.setItem(STORE_WIRING, JSON.stringify(wiringRegistry));
+        dPanel.classList.add('hidden'); dragStartNode = null;
+        applyWiringEngine(); requestCableRender(); updateStatus();
+    });
+
+    // --- PHASE 3: THE REACTIVE RUNTIME ENGINE ---
+    rxHub.addEventListener('mx-signal', (e) => {
+        const { channel, value } = e.detail;
+        activeReceivers.forEach(input => {
+            if (input.channel === channel) {
+                if (input.el.tagName === 'INPUT' || input.el.tagName === 'TEXTAREA') input.el.value = value; else input.el.textContent = value;
+            }
+        });
+        debouncedSave();
+    });
+
+    rxHub.addEventListener('mx-trigger', (e) => {
+        const { channel } = e.detail;
+        activeActions.forEach(act => {
+            if (act.channel === channel) {
+                if (act.actionType === 'clone') {
+                    const clone = act.el.cloneNode(true); 
+                    
+                    clone.removeAttribute('data-mx-wire-id');
+                    clone.querySelectorAll('[data-mx-wire-id]').forEach(c => c.removeAttribute('data-mx-wire-id'));
+                    clone.classList.remove('mx-wired-node');
+                    clone.querySelectorAll('.mx-wired-node').forEach(c => c.classList.remove('mx-wired-node'));
+                    delete clone.dataset.mxAttached;
+                    clone.querySelectorAll('[data-mx-attached]').forEach(c => delete c.dataset.mxAttached);
+                    
+                    act.el.parentNode.insertBefore(clone, act.el.nextSibling);
+                } else if (act.actionType === 'delete') {
+                    act.el.remove();
+                } else if (act.actionType === 'toggle') {
+                    const currentDisplay = window.getComputedStyle(act.el).display;
+                    if (currentDisplay !== 'none') { act.el.dataset.mxOrigDisplay = currentDisplay; act.el.style.display = 'none'; } 
+                    else { act.el.style.display = act.el.dataset.mxOrigDisplay || 'block'; }
+                } else if (act.actionType === 'hide') {
+                    act.el.dataset.mxOrigDisplay = window.getComputedStyle(act.el).display; act.el.style.display = 'none';
+                } else if (act.actionType === 'show') {
+                    act.el.style.display = act.el.dataset.mxOrigDisplay || 'block';
+                }
+            }
+        });
+        applyWiringEngine(); debouncedSave();
+    });
+
+    function applyWiringEngine() {
+        activeReceivers = []; activeActions = [];
+        const nodes = document.querySelectorAll('[data-mx-id]');
+        
+        for (let i = 0; i < nodes.length; i++) {
+            const scvNode = nodes[i]; const mxId = scvNode.dataset.mxId;
+            const nodeWiring = wiringRegistry[mxId]; if (!nodeWiring || !scvNode.shadowRoot) continue;
+            const shadow = scvNode.shadowRoot;
+            
+            Object.keys(nodeWiring).forEach(selector => {
+                const config = nodeWiring[selector]; const targetElements = getWiredElements(shadow, selector);
+                
+                targetElements.forEach(targetEl => {
+                    if (config.mode === 'receives') activeReceivers.push({ el: targetEl, channel: config.channel });
+                    else if (config.mode === 'action') activeActions.push({ el: targetEl, channel: config.channel, actionType: config.actionType });
+                    
+                    if (!targetEl.dataset.mxAttached) {
+                        targetEl.dataset.mxAttached = "true";
+                        
+                        targetEl.addEventListener('click', (e) => {
+                            if (currentMode === 'wiring') return;
+                            const curConfig = wiringRegistry[mxId] && wiringRegistry[mxId][selector];
+                            if (curConfig && curConfig.mode === 'trigger') {
+                                e.preventDefault(); e.stopPropagation();
+                                rxHub.dispatchEvent(new CustomEvent('mx-trigger', { detail: { channel: curConfig.channel } }));
+                            }
+                        }, true);
+                        
+                        targetEl.addEventListener('input', (e) => {
+                            if (currentMode === 'wiring') return;
+                            const curConfig = wiringRegistry[mxId] && wiringRegistry[mxId][selector];
+                            if (curConfig && curConfig.mode === 'sends') {
+                                rxHub.dispatchEvent(new CustomEvent('mx-signal', { detail: { channel: curConfig.channel, value: e.target.value } }));
+                            }
+                        }, true);
+                        
+                        targetEl.addEventListener('keyup', (e) => {
+                            if (currentMode === 'wiring') return;
+                            const curConfig = wiringRegistry[mxId] && wiringRegistry[mxId][selector];
+                            if (curConfig && curConfig.mode === 'sends' && targetEl.tagName !== 'INPUT' && targetEl.tagName !== 'TEXTAREA') {
+                                rxHub.dispatchEvent(new CustomEvent('mx-signal', { detail: { channel: curConfig.channel, value: targetEl.textContent } }));
+                            }
+                        }, true);
+                    }
+                });
+            });
+        }
+    }
+
+    // Boot
+    buildSystemMenu();
+    renderWorkspace();
+
+  </script>
+</body>
+</html>

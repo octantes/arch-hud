@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-cd ~/.arch/x-sketchwithdeck/
+cd ~/.arch/y-sketchwithdeck/
 
 bash launch.sh
