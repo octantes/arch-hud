@@ -595,9 +595,9 @@ export default function sketch(p) {
     p.background(0);
     p.blendMode(p.DIFFERENCE);
 
-    animationTime += p.dt;
-    colorTime += p.dt;
-    breatheTime += p.dt;
+    animationTime += p.dt();
+    colorTime += p.dt();
+    breatheTime += p.dt();
 
     let activeState = stateMachine.currentState;
 
