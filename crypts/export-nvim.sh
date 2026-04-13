@@ -4,7 +4,7 @@
 
 CONFIG_DIR="$HOME/.config/nvim"
 DEST_DIR="$HOME/cadenas/.arch"
-ARCHIVE_NAME="x nvim.tar"
+ARCHIVE_NAME="nvim.tar"
 
 tar -cf "$DEST_DIR/$ARCHIVE_NAME" -C "$CONFIG_DIR" .
 
