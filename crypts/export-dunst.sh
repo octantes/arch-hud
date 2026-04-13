@@ -4,7 +4,7 @@
 
 CONFIG_DIR="$HOME/.config/dunst"
 DEST_DIR="$HOME/cadenas/.arch"
-ARCHIVE_NAME="x dunst.tar"
+ARCHIVE_NAME="dunst.tar"
 
 tar -cf "$DEST_DIR/$ARCHIVE_NAME" -C "$CONFIG_DIR" .
 

@@ -4,7 +4,7 @@
 
 CONFIG_DIR="$HOME/.config/pipewire"
 DEST_DIR="$HOME/cadenas/.arch"
-ARCHIVE_NAME="x pipewire.tar"
+ARCHIVE_NAME="pipewire.tar"
 
 tar -cf "$DEST_DIR/$ARCHIVE_NAME" -C "$CONFIG_DIR" .
 

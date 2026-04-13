@@ -3,7 +3,7 @@
 # to import replace results
 
 DEST_DIR="$HOME/cadenas/.arch"
-ARCHIVE_NAME="y packages.md"
+ARCHIVE_NAME="packages.md"
 
 yay -Qent | sed 's/^/- /' > "$DEST_DIR/$ARCHIVE_NAME"
 
