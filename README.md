@@ -18,7 +18,6 @@ To install just go into each directory and sudo make clean install (script pendi
 - [tag to other monitors](https://dwm.suckless.org/patches/tagothermonitor/)
 - [hide unused tabs](https://dwm.suckless.org/patches/hide_vacant_tags/)
 - [executable name in tag](https://dwm.suckless.org/patches/taglabels/)
-- [signal statusbar location and button](https://dwm.suckless.org/patches/statuscmd/)
 - [add vertical resizing](https://dwm.suckless.org/patches/stackmfact/)
 - [simple tile gaps](https://dwm.suckless.org/patches/tilegap/)
 

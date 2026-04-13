@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-targets="suckless-dmenu suckless-dwm suckless-blocks suckless-st suckless-surf suckless-tabbed"
+targets="dmenu dwm blocks st surf tabbed"
 
 for t in $targets; do
     if [ -d "$t" ]; then

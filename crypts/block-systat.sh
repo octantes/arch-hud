@@ -68,11 +68,3 @@ esac
 
 # Send to bar
 echo "${CPU_TEMP}c ${MEM_USE}g"
-
-
-# Clicking on bar
-case $BLOCK_BUTTON in
-		1) setsid -w -f "$TERMINAL" -e htop ;;
-		3) notify-send -t 10000 -h string:bgcolor:$COLOR Stats "$CPU_USE\n\nGPU: $GPU_TEMP°C\n\nFan Speed: $FAN_SPEED" ;;
-		6) setsid -f "$TERMINAL" -e "$EDITOR" "$0" ;;
-esac

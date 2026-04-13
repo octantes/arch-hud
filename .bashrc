@@ -1,4 +1,5 @@
 [[ $- != *i* ]] && return # do nothing if not running interactively
+export PATH="$HOME/.local/bin:$PATH"
 
 # SET ENV -----------------------------------------------------------------
 
@@ -29,8 +30,8 @@ alias @h='cd /home/havitat'
 alias @m='cd /home/mounts'
 alias @o='cd /home/cadenas/octantes'
 
-alias @ac='cd /home/kaste/.arch/crypts'
-alias @ar='cd /home/kaste/.arch'
+alias @ac='cd /home/cadenas/.arch/crypts'
+alias @ar='cd /home/cadenas/.arch'
 
 alias lf='ranger'
 alias ls='ls --color=auto'
@@ -39,7 +40,7 @@ alias remote='ssh -Xf workstation'
 
 # PATHS TO .CONFIG --------------------------------------------------------
 
-export PATH="/home/kaste/.arch/crypts:$PATH"             # set scripts
+export PATH="/home/cadenas/.arch/crypts:$PATH"               # set scripts
 
 export PATH=$PATH:/usr/local/bin                             # set dwmblocks
 export XDG_CONFIG_HOME="$HOME/.config"                       # set home
@@ -53,6 +54,11 @@ export PATH="$CARGO_HOME/bin:$PATH"                          # set cargo
 export STEAM_HOME="$HOME/.config/steam"                      # set steam
 export GNUPGHOME="$HOME/.config/gnupg"                       # set gpg
 
+# NVIDIA TO XDG -----------------------------------------------------------
+
+export __GL_SHADER_DISK_CACHE_PATH="$XDG_CACHE_HOME/nv"
+mkdir -p "$__GL_SHADER_DISK_CACHE_PATH"
+
 # NVM TO XDG --------------------------------------------------------------
 
 export NVM_DIR="$HOME/.config/nvm"
@@ -61,12 +67,16 @@ export NVM_DIR="$HOME/.config/nvm"
 
 # NPM TO XDG --------------------------------------------------------------
 
-mkdir -p "$HOME/.config/npm"
+export NPM_CONFIG_USERCONFIG="$XDG_CONFIG_HOME/npm/npmrc"
+export NPM_CONFIG_CACHE="$XDG_CACHE_HOME/npm"
+export NODE_REPL_HISTORY="$XDG_DATA_HOME/node_repl_history"
 
-export NPM_CONFIG_USERCONFIG="$HOME/.config/npm/npmrc"
-export NPM_CONFIG_CACHE="$HOME/.config/npm/cache"
+mkdir -p "$XDG_CONFIG_HOME/npm"
+if [ ! -f "$NPM_CONFIG_USERCONFIG" ]; then
+    echo "prefix=$XDG_DATA_HOME/npm" > "$NPM_CONFIG_USERCONFIG"
+fi
 
-[ -f "$NPM_CONFIG_USERCONFIG" ] || touch "$NPM_CONFIG_USERCONFIG"
+export PATH="$XDG_DATA_HOME/npm/bin:$PATH"
 
 # SECRETS -----------------------------------------------------------------
 
