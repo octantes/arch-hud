@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export PATH="/home/kaste/.arch/crypts:$PATH"
+export PATH="/home/cadenas/.arch/crypts:$PATH"
 
 export WEBKIT_DISABLE_COMPOSITING_MODE=1 # disable compositing for surf
 export XCURSOR_SIZE=8                    # set cursor size for x11

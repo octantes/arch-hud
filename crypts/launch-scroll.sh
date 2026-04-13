@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-cd ~/.arch/x-browsewithscroll/
+cd ~/cadenas/.arch/x-browsewithscroll/
 
 bash launch.sh
