@@ -13,7 +13,7 @@ static Parameter defconfig[ParameterLast] = {
     /* 0 = default | per-uri = 1 | command = 2 | highest priority will be used */
 
 	/* parameter                    arg value       priority                   */
-	[AccessMicrophone]    =       { { .i = 0                                }, },
+	[AccessMicrophone]    =       { { .i = 1                                }, },
 	[AccessWebcam]        =       { { .i = 0                                }, },
 	[Certificate]         =       { { .i = 0                                }, },
 	[CaretBrowsing]       =       { { .i = 0                                }, },
@@ -31,7 +31,7 @@ static Parameter defconfig[ParameterLast] = {
 	[JavaScript]          =       { { .i = 1                                }, },
 	[KioskMode]           =       { { .i = 0                                }, },
 	[LoadImages]          =       { { .i = 1                                }, },
-	[MediaManualPlay]     =       { { .i = 1                                }, },
+	[MediaManualPlay]     =       { { .i = 0                                }, },
 	[PDFJSviewer]         =       { { .i = 1                                }, },
 	[PreferredLanguages]  =       { { .v = (char *[]) { NULL }              }, },
 	[RunInFullscreen]     =       { { .i = 0                                }, },
@@ -43,12 +43,21 @@ static Parameter defconfig[ParameterLast] = {
 	[SpellLanguages]      =       { { .v = ( (char *[]) { "en_US", NULL } ) }, },
 	[StrictTLS]           =       { { .i = 1                                }, },
 	[Style]               =       { { .i = 1                                }, },
-	[WebGL]               =       { { .i = 0                                }, },
+	[WebGL]               =       { { .i = 1                                }, },
 	[ZoomLevel]           =       { { .f = 1.0                              }, },
 
 };
 
-static UriParameters     uriparams[] = { { "(://|\\.)suckless\\.org(/|$)", { [JavaScript] = { { .i = 0 }, 1 }, }, }, };         /* uri parameters                      */
+static UriParameters uriparams[] = {
+    { "://localhost:3000/", {
+        [JavaScript]          = { { .i = 1 }, 1 },
+        [WebGL]               = { { .i = 1 }, 1 },
+        [AccessMicrophone]    = { { .i = 1 }, 1 },
+        [FileURLsCrossAccess] = { { .i = 1 }, 1 },
+    }, },
+    { "(://|\\.)suckless\\.org(/|$)", { [JavaScript] = { { .i = 0 }, 1 }, }, }, 
+};
+
 static int               winsize[] = { 800, 600 };                                                                              /* default windows size (w, h)         */
 static WebKitFindOptions findopts = WEBKIT_FIND_OPTIONS_CASE_INSENSITIVE | WEBKIT_FIND_OPTIONS_WRAP_AROUND;                     /* webkit find options                 */
 
@@ -168,4 +177,4 @@ static Button buttons[] = {      /* target can be OnDoc, OnLink, OnImg, OnMedia,
 
 };
 
-#define HOMEPAGE "https://duckduckgo.com/"
+#define HOMEPAGE "http://localhost:3000/slate/"

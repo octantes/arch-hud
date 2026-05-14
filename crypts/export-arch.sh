@@ -2,7 +2,7 @@
 
 # to import replace results
 
-CONFIG_DIR="$HOME/cadenas/.arch"
+CONFIG_DIR="/home/cadenas/.arch"
 DEST_DIR="/home/havitat/04"
 ARCHIVE_NAME="01 ARCH.tar"
 

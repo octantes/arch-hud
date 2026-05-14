@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 
 prog=$1
-
 win=$(xdotool getactivewindow 2>/dev/null)
+
+BLACKBOOK="http://localhost:3000"
 
 if [ -n "$win" ] && xprop -id "$win" 2>/dev/null | grep -q '"tabbed"'; then
 
   if [ "$prog" = surf ]; then
-    exec surf -e "$win"
+    bash /home/cadenas/blackbook/launch.sh
+    exec surf -e "$win" "$BLACKBOOK"
   else
     exec st -w "$win" -e "$prog"
   fi
@@ -15,6 +17,7 @@ if [ -n "$win" ] && xprop -id "$win" 2>/dev/null | grep -q '"tabbed"'; then
 else
 
   if [ "$prog" = surf ]; then
+    bash /home/cadenas/blackbook/launch.sh
     exec tabbed -c surf -e
   else
     exec tabbed -c -r 2 st -w '' -e "$prog"

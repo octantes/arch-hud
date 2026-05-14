@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-cp ~/.bashrc    ~/cadenas/.arch/
-cp ~/.dircolors ~/cadenas/.arch/
-cp ~/.xinitrc   ~/cadenas/.arch/
+cp ~/.bashrc    /home/cadenas/.arch/
+cp ~/.dircolors /home/cadenas/.arch/
+cp ~/.xinitrc   /home/cadenas/.arch/
 
 bash export-packages.sh # A
 bash export-nvim.sh     # B

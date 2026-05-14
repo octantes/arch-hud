@@ -3,7 +3,7 @@
 # to import replace results
 
 CONFIG_DIR="$HOME/.config/dunst"
-DEST_DIR="$HOME/cadenas/.arch"
+DEST_DIR="/home/cadenas/.arch"
 ARCHIVE_NAME="dunst.tar"
 
 tar -cf "$DEST_DIR/$ARCHIVE_NAME" -C "$CONFIG_DIR" .
