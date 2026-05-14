@@ -5,7 +5,7 @@
 cp ~/.config/mpd/mpd.conf ~/.config/rmpc/
 
 CONFIG_DIR="$HOME/.config/rmpc"
-DEST_DIR="$HOME/cadenas/.arch"
+DEST_DIR="/home/cadenas/.arch"
 ARCHIVE_NAME="rmpc.tar"
 
 tar -cf "$DEST_DIR/$ARCHIVE_NAME" -C "$CONFIG_DIR" .

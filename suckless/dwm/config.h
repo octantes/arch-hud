@@ -55,11 +55,11 @@ static const char        *dmenucmd[]     = { "dmenu_run", "-m", dmenumon, "-fn",
 static const char        *tabsurfcmd[]   = { "tabbed", "-c", "surf", "-e", NULL };
 static const char        *tabtermcmd[]   = { "tabbed", "-c", "-r", "2", "st", "-w", "", NULL };
 static const char        *addsurfcmd[]   = { "/bin/sh", "-c", "surf -e $(xdotool getactivewindow)", NULL };
-
-static const char        *smartnvim[]   = { "smart-tabbed", "nvim",   NULL };
-static const char        *smartranger[] = { "smart-tabbed", "ranger", NULL };
-static const char        *smartrmpc[]   = { "smart-tabbed", "rmpc",   NULL };
-static const char        *smartsurf[]   = { "smart-tabbed", "surf",   NULL };
+ 
+static const char        *smartnvim[]   = { "smart-tabbed", "nvim",                   NULL };
+static const char        *smartranger[] = { "smart-tabbed", "ranger",                 NULL };
+static const char        *smartrmpc[]   = { "smart-tabbed", "rmpc",                   NULL };
+static const char        *smartsurf[]   = { "smart-tabbed", "surf",                   NULL };
 
 static void togglegaps(const Arg *arg) {
 

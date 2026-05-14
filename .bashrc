@@ -16,19 +16,17 @@ PS1='[\u@\h \W]\$ '
 
 alias sudo='sudo env "PATH=$PATH"'                           # sudo inherits path
 
-export C=/home/cadenas
 export A=/home/archivo
-export K=/home/kaste
+export C=/home/cadenas
 export H=/home/havitat
+export K=/home/kaste
 export M=/home/mounts
-export O=/home/cadenas/octantes
 
-alias @c='cd /home/cadenas'
 alias @a='cd /home/archivo'
-alias @k='cd /home/kaste'
+alias @c='cd /home/cadenas'
 alias @h='cd /home/havitat'
+alias @k='cd /home/kaste'
 alias @m='cd /home/mounts'
-alias @o='cd /home/cadenas/octantes'
 
 alias @ac='cd /home/cadenas/.arch/crypts'
 alias @ar='cd /home/cadenas/.arch'
