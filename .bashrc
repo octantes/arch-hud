@@ -2,7 +2,7 @@
 export PATH="$HOME/.local/bin:$PATH"
 
 # SET ENV -----------------------------------------------------------------
-
+export VSCODE_OSS_SHARED="/home/kaste/.vscode-oss/vscode-oss-shared"
 export VISUAL=nvim;
 export EDITOR=nvim;
 
@@ -13,8 +13,6 @@ eval "$(dircolors -b ~/.dircolors)"
 # SET ALIASES -------------------------------------------------------------
 
 PS1='[\u@\h \W]\$ '
-
-alias sudo='sudo env "PATH=$PATH"'                           # sudo inherits path
 
 export A=/home/archivo
 export C=/home/cadenas
@@ -35,6 +33,8 @@ alias lf='ranger'
 alias ls='ls --color=auto'
 alias grep='grep --color=auto'
 alias remote='ssh -Xf workstation'
+alias sillytavern='sillytavern --global'
+alias comfy='sudo -u comfy comfyui --port 8001'
 
 # PATHS TO .CONFIG --------------------------------------------------------
 
