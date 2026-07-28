@@ -68,7 +68,7 @@ To install just go into each directory and sudo make clean install (script pendi
 | WIN + Q              | spawns tabbed or tab with nvim          | over tabbed   | dwm    |
 | WIN + W              | spawns tabbed or tab with ranger        | over tabbed   | dwm    |
 | WIN + E              | spawns tabbed or tab with surf          | over tabbed   | dwm    |
-| WIN + R              | spawns tabbed or tab with rmpc          | over tabbed   | dwm    |
+| WIN + R              | spawns tabbed or tab                    | over tabbed   | dwm    |
 | WIN + A              | changes to tiled layout                 | anywhere      | dwm    |
 | WIN + S              | changes to floating layout              | anywhere      | dwm    |
 | WIN + D              | changes to monocle layout               | anywhere      | dwm    |

@@ -7,7 +7,7 @@ pidof -x playerctl-loop >/dev/null 2>&1 || playerctl-loop >/dev/null 2>&1 &
 META="{{ title }} - {{ artist }}"
 
 # iterates players and finds the one playing
-for PLAYER in chromium spotify mpd; do
+for PLAYER in chromium spotify; do
     [ "$(playerctl --player=$PLAYER status 2>/dev/null)" != "Playing" ] && continue
     echo "r $(playerctl metadata --player $PLAYER --format "$META")" \
         | tr '[:upper:]' '[:lower:]'

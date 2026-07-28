@@ -24,7 +24,6 @@ autorandr --change workstation                                                  
 xrandr --output HDMI-0 --mode 1920x1080 --rate 74.97                                    # main monitor settings
 xrandr --output DP-3 --mode 1920x1080 --rate 60.00 --rotate right --left-of HDMI-0      # left monitor settings
 
-pgrep -x mpd > /dev/null || mpd --no-daemon ~/.config/mpd/mpd.conf &                    # init music server
 dunst &                                                                                 # init notification manager
 dwmblocks &                                                                             # init statusbar commands
 
