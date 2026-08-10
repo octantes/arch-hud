@@ -15,7 +15,6 @@ if command -v dbus-update-activation-environment >/dev/null 2>&1; then
     dbus-update-activation-environment --systemd DISPLAY XAUTHORITY XDG_CURRENT_DESKTOP
 fi
 
-xrdb -merge ~/Xresources                                                                # update settings (cursor)
 xsetroot -solid "#100F0F"                                                               # set background color
 xset -dpms                                                                              # disable screen sleep
 xset s off                                                                              # disable screen sleep

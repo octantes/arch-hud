@@ -45,10 +45,6 @@ export XDG_CONFIG_HOME="$HOME/.config"                       # set home
 export XDG_CACHE_HOME="$HOME/.cache"                         # set cache
 export XDG_DATA_HOME="$HOME/.local/share"                    # set data
 export XDG_STATE_HOME="$HOME/.local/state"                   # set state
-export RUSTUP_HOME="$HOME/.config/rustup"                    # set rustup
-export CARGO_HOME="$HOME/.config/cargo"                      # set cargo
-export PATH="$CARGO_HOME/bin:$PATH"                          # set cargo
-[ -s "$CARGO_HOME/env" ] && \. "$CARGO_HOME/env"             # set env
 export STEAM_HOME="$HOME/.config/steam"                      # set steam
 export GNUPGHOME="$HOME/.config/gnupg"                       # set gpg
 

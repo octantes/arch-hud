@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-# refresh always when track changes
-pidof -x playerctl-loop >/dev/null 2>&1 || playerctl-loop >/dev/null 2>&1 &
-
 # displays artist or album acording to format
 META="{{ title }} - {{ artist }}"
 
