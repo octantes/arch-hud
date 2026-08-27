@@ -18,13 +18,12 @@ fi
 xsetroot -solid "#100F0F"                                                               # set background color
 xset -dpms                                                                              # disable screen sleep
 xset s off                                                                              # disable screen sleep
+xrdb -merge ~/.Xresources                                                              # load x resources (fontconfig etc)
 autorandr --change workstation                                                          # apply display settings
-
-xrandr --output HDMI-0 --mode 1920x1080 --rate 74.97                                    # main monitor settings
-xrandr --output DP-3 --mode 1920x1080 --rate 60.00 --rotate right --left-of HDMI-0      # left monitor settings
 
 dunst &                                                                                 # init notification manager
 dwmblocks &                                                                             # init statusbar commands
+router-alertd &                                                                         # relay router alerts to dunst
 
 # init dwm infinite loop with lock file
 

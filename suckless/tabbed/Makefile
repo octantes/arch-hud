@@ -52,7 +52,7 @@ install: all
 	for f in ${BIN}; do chmod 755 "${DESTDIR}${PREFIX}/bin/$$f"; done
 	# installing doc files.
 	mkdir -p "${DESTDIR}${DOCPREFIX}"
-	cp -f README "${DESTDIR}${DOCPREFIX}"
+	-test -f README && cp -f README "${DESTDIR}${DOCPREFIX}"
 	# installing manual pages for general commands: section 1.
 	mkdir -p "${DESTDIR}${MANPREFIX}/man1"
 	for m in ${MAN1}; do sed "s/VERSION/${VERSION}/g" < $$m > "${DESTDIR}${MANPREFIX}/man1/$$m"; done

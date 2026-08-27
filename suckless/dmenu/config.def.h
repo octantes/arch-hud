@@ -1,5 +1,5 @@
 static       int   topbar  = 1;
-static const char *fonts[] = { "GohuFont 11 Nerd Font:size=10" };
+static const char *fonts[] = { "DepartureMono Nerd Font:pixelsize=11" };
 static const char *prompt  = NULL;
 
 static const char *colors[SchemeLast][2] = {

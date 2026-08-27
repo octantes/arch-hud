@@ -20,6 +20,7 @@ To install just go into each directory and sudo make clean install (script pendi
 - [executable name in tag](https://dwm.suckless.org/patches/taglabels/)
 - [add vertical resizing](https://dwm.suckless.org/patches/stackmfact/)
 - [simple tile gaps](https://dwm.suckless.org/patches/tilegap/)
+- [fake fullscreen (toggleable)](https://dwm.suckless.org/patches/fakefullscreen/)
 
 ### [dmenu](https://tools.suckless.org/dmenu/) - dynamic menu
 - [highlight searched chars](https://tools.suckless.org/dmenu/patches/highlight/)
@@ -73,6 +74,7 @@ To install just go into each directory and sudo make clean install (script pendi
 | WIN + S              | changes to floating layout              | anywhere      | dwm    |
 | WIN + D              | changes to monocle layout               | anywhere      | dwm    |
 | WIN + F              | changes a window to floating            | tiled layout  | dwm    |
+| WIN + B              | toggles fake fullscreen mode            | anywhere      | dwm    |
 | WIN + G              | toggles between gaps/no gaps            | tiled layout  | dwm    |
 | WIN + <              | changes stacked window to master        | tiled layout  | dwm    |
 | WIN + Z              | decrease master window amount           | tiled layout  | dwm    |

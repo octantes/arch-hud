@@ -808,7 +808,10 @@ setparameter(Client *c, int refresh, ParamName p, const Arg *a)
 		webkit_settings_set_default_charset(c->settings, a->v);
 		return; /* do not update */
 	case DNSPrefetch:
+		#pragma GCC diagnostic push
+		#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 		webkit_settings_set_enable_dns_prefetching(c->settings, a->i);
+		#pragma GCC diagnostic pop
 		return; /* do not update */
 	case FileURLsCrossAccess:
 		webkit_settings_set_allow_file_access_from_file_urls(
@@ -1429,7 +1432,10 @@ createwindow(Client *c)
 		w = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
 		wmstr = g_path_get_basename(argv0);
+		#pragma GCC diagnostic push
+		#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 		gtk_window_set_wmclass(GTK_WINDOW(w), wmstr, "Surf");
+		#pragma GCC diagnostic pop
 		g_free(wmstr);
 
 		wmstr = g_strdup_printf("%s[%"PRIu64"]", "Surf", c->pageid);

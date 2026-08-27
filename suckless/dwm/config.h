@@ -14,8 +14,8 @@ static const char *colors[][3]           = {
 
 };
 
-static const char         *fonts[]       = { "GohuFont 11 Nerd Font:size=10" };
-static const char         dmenufont[]    =   "GohuFont 11 Nerd Font:size=10";
+static const char         *fonts[]       = { "DepartureMono Nerd Font:pixelsize=11" };
+static const char         dmenufont[]    =   "DepartureMono Nerd Font:pixelsize=11";
 static const Layout       layouts[]      = { { "[ T ]", tile    }, { "[ F ]", NULL    }, { "[ M ]", monocle } };
 static const Rule         rules[]        = { { "placeholder window class",    NULL,          NULL, 0, 0, -1 } };
 static const char         *tags[]        = {   "1", "2", "3", "4", "5", "6", "7", "8", "9"                    };
@@ -35,8 +35,9 @@ static const float        smfact         = 0.25;       /* factor of tiled client
 static const int          nmaster        = 1;          /* number of clients in master area                  */
 static const int          resizehints    = 0;          /* 1 means respect size hints in tiled resizals      */
 static const int          lockfullscreen = 1;          /* 1 will force focus on the fullscreen window       */
+static int                fakefullscreen = 0;          /* 1 = fullscreen stays in tile position             */
 static const int          mainmon        = 0;          /* xsetroot will only change the bar on this monitor */
-static const int          refreshrate    = 74.99;      /* refresh rate (per second) for client move/resize  */
+static const int          refreshrate    = 75;           /* refresh rate (per second) for client move/resize  */
 static char               dmenumon[2]    = "0";        /* monitor for dmenu launch                          */
 
 #define MODKEY Mod4Mask
@@ -52,13 +53,11 @@ static char               dmenumon[2]    = "0";        /* monitor for dmenu laun
 
 static const char        *termcmd[]      = { "st",                     NULL };
 static const char        *dmenucmd[]     = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL };
-static const char        *tabsurfcmd[]   = { "tabbed", "-c", "surf", "-e", NULL };
 static const char        *tabtermcmd[]   = { "tabbed", "-c", "-r", "2", "st", "-w", "", NULL };
-static const char        *addsurfcmd[]   = { "/bin/sh", "-c", "surf -e $(xdotool getactivewindow)", NULL };
  
 static const char        *smartnvim[]   = { "smart-tabbed", "nvim",                   NULL };
 static const char        *smartranger[] = { "smart-tabbed", "ranger",                 NULL };
-static const char        *smartrmpc[]   = { "smart-tabbed", "rmpc",                   NULL };
+static const char        *smartterm[]   = { "smart-tabbed", "st",                     NULL };
 static const char        *smartsurf[]   = { "smart-tabbed", "surf",                   NULL };
 
 static void togglegaps(const Arg *arg) {
@@ -86,12 +85,13 @@ static const Key keys[] = {
     { MODKEY,                       XK_q,         spawn,          {.v = smartnvim}     },
     { MODKEY,                       XK_w,         spawn,          {.v = smartranger}   },
     { MODKEY,                       XK_e,         spawn,          {.v = smartsurf}     },
-    { MODKEY,                       XK_r,         spawn,          {.v = smartrmpc}     },
+    { MODKEY,                       XK_r,         spawn,          {.v = smartterm}     },
 
     { MODKEY,                       XK_a,         setlayout,      {.v = &layouts[0]}   },
 	{ MODKEY,                       XK_s,         setlayout,      {.v = &layouts[1]}   },
 	{ MODKEY,                       XK_d,         setlayout,      {.v = &layouts[2]}   },
     { MODKEY,                       XK_f,         togglefloating, {0}                  },
+    { MODKEY,                       XK_b,         togglefakefullscreen, {0}              },
     { MODKEY,                       XK_g,         togglegaps,     {0}                  },
 
 	{ MODKEY,                       XK_z,         incnmaster,     {.i = -1 }           },

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 targets="dmenu dwm blocks st surf tabbed"
 

@@ -1,4 +1,4 @@
-static          char  *font               = "GohuFont 11 Nerd Font";
+static          char  *font               = "DepartureMono Nerd Font:pixelsize=11";
 static          int    borderpx           = 2;
 static          char  *shell              = "/bin/sh";
                 char  *utmp               = NULL;

@@ -53,7 +53,6 @@ static void (*writestatus) () = pstdout;
 static char statusbar[LENGTH(blocks)][CMDLENGTH] = {0};
 static char statusstr[2][STATUSLENGTH];
 static int statusContinue = 1;
-static int returnStatus = 0;
 
 //opens process *cmd and stores output in *output
 void getcmd(const Block *block, char *output)
@@ -167,7 +166,7 @@ void statusloop()
 		writestatus();
 		if (!statusContinue)
 			break;
-		sleep(1.0);
+		sleep(1);
 	}
 }
 

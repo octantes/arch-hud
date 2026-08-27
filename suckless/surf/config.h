@@ -13,7 +13,7 @@ static Parameter defconfig[ParameterLast] = {
     /* 0 = default | per-uri = 1 | command = 2 | highest priority will be used */
 
 	/* parameter                    arg value       priority                   */
-	[AccessMicrophone]    =       { { .i = 1                                }, },
+	[AccessMicrophone]    =       { { .i = 0                                }, },
 	[AccessWebcam]        =       { { .i = 0                                }, },
 	[Certificate]         =       { { .i = 0                                }, },
 	[CaretBrowsing]       =       { { .i = 0                                }, },

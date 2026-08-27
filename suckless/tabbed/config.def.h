@@ -1,4 +1,4 @@
-static const char  font[]        = "GohuFont 11 Nerd Font:size=9";
+static const char  font[]        = "DepartureMono Nerd Font:pixelsize=11";
 static const char* normbgcolor   = "#1A1C1C";
 static const char* normfgcolor   = "#AAABAC";
 static const char* selbgcolor    = "#8AB6BB";

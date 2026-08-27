@@ -2,7 +2,6 @@
 export PATH="$HOME/.local/bin:$PATH"
 
 # SET ENV -----------------------------------------------------------------
-export VSCODE_OSS_SHARED="/home/kaste/.vscode-oss/vscode-oss-shared"
 export VISUAL=nvim;
 export EDITOR=nvim;
 
@@ -28,13 +27,25 @@ alias @m='cd /home/mounts'
 
 alias @ac='cd /home/cadenas/.arch/crypts'
 alias @ar='cd /home/cadenas/.arch'
+alias @ii='sudo -i'
+alias @lf='ranger /home/kaste'
 
 alias lf='ranger'
 alias ls='ls --color=auto'
 alias grep='grep --color=auto'
 alias remote='ssh -Xf workstation'
-alias sillytavern='sillytavern --global'
 alias comfy='sudo -u comfy comfyui --port 8001'
+alias nsxiv='nsxiv -p'
+
+alias @rt='router-ssh'
+alias @rts='router-status'
+alias @rtl='router-dns-log'
+alias @rta='router-allow'
+alias @rtf='router-mount && lf /home/mounts/router'
+alias @rtfu='router-umount'
+alias @rtn='router-networks'
+alias @rtd='router-devices'
+alias @rtp='router-passwd'
 
 # PATHS TO .CONFIG --------------------------------------------------------
 

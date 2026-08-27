@@ -38,7 +38,10 @@ evalmsg(char *msg, size_t sz)
 	if (sz < 2)
 		return 0;
 
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 	jsc = webkit_frame_get_js_context(webkit_web_page_get_main_frame(page));
+	#pragma GCC diagnostic pop
 	jsv = NULL;
 
 	switch (msg[1]) {

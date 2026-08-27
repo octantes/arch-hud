@@ -10,6 +10,8 @@ if [ -n "$win" ] && xprop -id "$win" 2>/dev/null | grep -q '"tabbed"'; then
   if [ "$prog" = surf ]; then
     bash /home/cadenas/blackbook/launch.sh
     exec surf -e "$win" "$BLACKBOOK"
+  elif [ "$prog" = st ]; then
+    exec st -w "$win"
   else
     exec st -w "$win" -e "$prog"
   fi
@@ -19,6 +21,8 @@ else
   if [ "$prog" = surf ]; then
     bash /home/cadenas/blackbook/launch.sh
     exec tabbed -c surf -e
+  elif [ "$prog" = st ]; then
+    exec tabbed -c -r 2 st -w ''
   else
     exec tabbed -c -r 2 st -w '' -e "$prog"
   fi
