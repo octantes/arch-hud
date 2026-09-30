@@ -3,15 +3,38 @@
 prog=$1
 win=$(xdotool getactivewindow 2>/dev/null)
 
-BLACKBOOK="http://localhost:3000"
+# cwd of the focused terminal's shell (mirrors tabbed's own getchildpid/getpidcwd)
+focused_cwd() {
+  local wid pid child cwd focus
+  focus=$(xdotool getwindowfocus 2>/dev/null)
+  if pid=$(xdotool getwindowpid "$focus" 2>/dev/null); then
+    read -r child _ < "/proc/$pid/task/$pid/children" 2>/dev/null
+    cwd=$(readlink -f "/proc/$child/cwd" 2>/dev/null)
+    [ -n "$cwd" ] && { printf '%s' "$cwd"; return; }
+  fi
+  # inside tabbed: active tab is the topmost embedded client (tabbed raises it on
+  # focus()). xwininfo -children lists bottom-to-top, so tac = topmost first.
+  for wid in $(xwininfo -children -id "$win" 2>/dev/null | awk '/^[[:space:]]*0x[0-9a-f]+/{print $1}' | tac); do
+    pid=$(xdotool getwindowpid "$wid" 2>/dev/null) || continue
+    read -r child _ < "/proc/$pid/task/$pid/children" 2>/dev/null
+    [ -n "$child" ] || continue
+    cwd=$(readlink -f "/proc/$child/cwd" 2>/dev/null)
+    [ -n "$cwd" ] && { printf '%s' "$cwd"; return; }
+  done
+  return 1
+}
 
 if [ -n "$win" ] && xprop -id "$win" 2>/dev/null | grep -q '"tabbed"'; then
 
   if [ "$prog" = surf ]; then
-    bash /home/cadenas/blackbook/launch.sh
-    exec surf -e "$win" "$BLACKBOOK"
+    exec /home/kaste/.arch/crypts/launch-bb.sh "$win"
   elif [ "$prog" = st ]; then
-    exec st -w "$win"
+    cwd=$(focused_cwd)
+    if [ -n "$cwd" ]; then
+      exec st -w "$win" -d "$cwd"
+    else
+      exec st -w "$win"
+    fi
   else
     exec st -w "$win" -e "$prog"
   fi
@@ -19,10 +42,14 @@ if [ -n "$win" ] && xprop -id "$win" 2>/dev/null | grep -q '"tabbed"'; then
 else
 
   if [ "$prog" = surf ]; then
-    bash /home/cadenas/blackbook/launch.sh
-    exec tabbed -c surf -e
+    exec /home/kaste/.arch/crypts/launch-bb.sh "$win"
   elif [ "$prog" = st ]; then
-    exec tabbed -c -r 2 st -w ''
+    cwd=$(focused_cwd)
+    if [ -n "$cwd" ]; then
+      exec tabbed -c -r 2 st -w '' -d "$cwd"
+    else
+      exec tabbed -c -r 2 st -w ''
+    fi
   else
     exec tabbed -c -r 2 st -w '' -e "$prog"
   fi

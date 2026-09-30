@@ -8,5 +8,5 @@ if [ "$current" = "latam" ]; then
 
 else
     setxkbmap latam
-    notify-send "keymap" "latam keymap enabled" 2>/dev/null   
+    notify-send "keymap" "latam keymap enabled" 2>/dev/null
 fi

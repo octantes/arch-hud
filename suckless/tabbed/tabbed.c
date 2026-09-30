@@ -1274,7 +1274,7 @@ unmanage(int c)
 
 		if (closelastclient) {
 			running = False;
-            return;  
+            return;
         } else if (fillagain && running)
 			spawn(NULL);
 	} else {

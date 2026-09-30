@@ -1,17 +1,24 @@
 [[ $- != *i* ]] && return # do nothing if not running interactively
-export PATH="$HOME/.local/bin:$PATH"
+
 
 # SET ENV -----------------------------------------------------------------
-export VISUAL=nvim;
-export EDITOR=nvim;
+
+export HOME="/root"
+export PATH="/home/kaste/.local/bin:$PATH"
+
+export VSCODE_OSS_SHARED="/home/kaste/.vscode-oss/vscode-oss-shared"
+export VISUAL=nvim
+export EDITOR=nvim
+
 
 # SET STYLES --------------------------------------------------------------
 
-eval "$(dircolors -b ~/.dircolors)"
+eval "$(dircolors -b /root/.dircolors)"
+
 
 # SET ALIASES -------------------------------------------------------------
 
-PS1='[\u@\h \W]\$ '
+PS1='[\u@\h \W]$ '
 
 export A=/home/archivo
 export C=/home/cadenas
@@ -37,56 +44,16 @@ alias remote='ssh -Xf workstation'
 alias comfy='sudo -u comfy comfyui --port 8001'
 alias nsxiv='nsxiv -p'
 
-alias @rt='router-ssh'
-alias @rts='router-status'
-alias @rtl='router-dns-log'
-alias @rta='router-allow'
-alias @rtf='router-mount && lf /home/mounts/router'
-alias @rtfu='router-umount'
-alias @rtn='router-networks'
-alias @rtd='router-devices'
-alias @rtp='router-passwd'
-
 # PATHS TO .CONFIG --------------------------------------------------------
 
-export PATH="/home/cadenas/.arch/crypts:$PATH"               # set scripts
+export PATH="/home/cadenas/.arch/crypts:$PATH"       # set scripts
+export PATH="/usr/local/bin:$PATH"                   # set dwmblocks
 
-export PATH=$PATH:/usr/local/bin                             # set dwmblocks
-export XDG_CONFIG_HOME="$HOME/.config"                       # set home
-export XDG_CACHE_HOME="$HOME/.cache"                         # set cache
-export XDG_DATA_HOME="$HOME/.local/share"                    # set data
-export XDG_STATE_HOME="$HOME/.local/state"                   # set state
-export STEAM_HOME="$HOME/.config/steam"                      # set steam
-export GNUPGHOME="$HOME/.config/gnupg"                       # set gpg
+# share user's configuration with root
+export XDG_CONFIG_HOME="/home/kaste/.config"
+export XDG_CACHE_HOME="/home/kaste/.cache"
+export XDG_DATA_HOME="/home/kaste/.local/share"
+export XDG_STATE_HOME="/home/kaste/.local/state"
 
-# NVIDIA TO XDG -----------------------------------------------------------
-
-export __GL_SHADER_DISK_CACHE_PATH="$XDG_CACHE_HOME/nv"
-mkdir -p "$__GL_SHADER_DISK_CACHE_PATH"
-
-# NVM TO XDG --------------------------------------------------------------
-
-export NVM_DIR="$HOME/.config/nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-
-# NPM TO XDG --------------------------------------------------------------
-
-export NPM_CONFIG_USERCONFIG="$XDG_CONFIG_HOME/npm/npmrc"
-export NPM_CONFIG_CACHE="$XDG_CACHE_HOME/npm"
-export NODE_REPL_HISTORY="$XDG_DATA_HOME/node_repl_history"
-
-mkdir -p "$XDG_CONFIG_HOME/npm"
-if [ ! -f "$NPM_CONFIG_USERCONFIG" ]; then
-    echo "prefix=$XDG_DATA_HOME/npm" > "$NPM_CONFIG_USERCONFIG"
-fi
-
-export PATH="$XDG_DATA_HOME/npm/bin:$PATH"
-
-# SECRETS -----------------------------------------------------------------
-
-[ -f ~/.secrets ] && source ~/.secrets
-
-if [ -z "$SSH_AUTH_SOCK" ]; then
-    eval "$(ssh-agent -s)" >/dev/null 2>&1
-fi
+export STEAM_HOME="/home/kaste/.config/steam"
+export GNUPGHOME="/home/kaste/.config/gnupg"

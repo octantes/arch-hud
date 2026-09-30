@@ -8,12 +8,12 @@ static char *cachedir         = "~/.config/surf/cache/";
 static char *cookiefile       = "~/.config/surf/cookies.txt";
 static char *searchurl        = "duckduckgo.com/?q=%s";
 
-static Parameter defconfig[ParameterLast] = { 
+static Parameter defconfig[ParameterLast] = {
 
     /* 0 = default | per-uri = 1 | command = 2 | highest priority will be used */
 
 	/* parameter                    arg value       priority                   */
-	[AccessMicrophone]    =       { { .i = 1                                }, },
+	[AccessMicrophone]    =       { { .i = 0                                }, },
 	[AccessWebcam]        =       { { .i = 0                                }, },
 	[Certificate]         =       { { .i = 0                                }, },
 	[CaretBrowsing]       =       { { .i = 0                                }, },
@@ -55,7 +55,7 @@ static UriParameters uriparams[] = {
         [AccessMicrophone]    = { { .i = 1 }, 1 },
         [FileURLsCrossAccess] = { { .i = 1 }, 1 },
     }, },
-    { "(://|\\.)suckless\\.org(/|$)", { [JavaScript] = { { .i = 0 }, 1 }, }, }, 
+    { "(://|\\.)suckless\\.org(/|$)", { [JavaScript] = { { .i = 0 }, 1 }, }, },
 };
 
 static int               winsize[] = { 800, 600 };                                                                              /* default windows size (w, h)         */
@@ -108,7 +108,7 @@ static WebKitFindOptions findopts = WEBKIT_FIND_OPTIONS_CASE_INSENSITIVE | WEBKI
 }
 
 /* site specific styles                                    */
-static SiteSpecific styles[] = {                                     
+static SiteSpecific styles[] = {
 
 	/* regexp               file in $styledir */
 	{ ".*",                 "default.css" },
@@ -128,7 +128,7 @@ static Key keys[] = {     /* if using something other than MODKEY & GDK_SHIFT_MA
 
     /* modifier              keyval     function    arg */
 	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_q, spawn,           SETPROP("_SURF_URI", "_SURF_GO", PROMPT_GO) },
-	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_w, spawn,           SEARCH()                                         },    
+	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_w, spawn,           SEARCH()                                         },
 	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_e, spawn,           SETPROP("_SURF_FIND", "_SURF_FIND", PROMPT_FIND) },
 
 	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_r, reload,          { .i = 0   } }, /* reloads the current page         */
@@ -143,7 +143,7 @@ static Key keys[] = {     /* if using something other than MODKEY & GDK_SHIFT_MA
 	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_i, zoom,            { .i = +1  } }, /* zooms page in                    */
 	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_o, navigate,        { .i = +1  } }, /* navigates forwards in history    */
 
-	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_h, scrollh,         { .i = -10 } }, /* viewport percentage scroll value */   
+	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_h, scrollh,         { .i = -10 } }, /* viewport percentage scroll value */
 	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_j, scrollv,         { .i = -10 } }, /* viewport percentage scroll value */
 	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_k, scrollv,         { .i = +10 } }, /* viewport percentage scroll value */
 	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_l, scrollh,         { .i = +10 } }, /* viewport percentage scroll value */

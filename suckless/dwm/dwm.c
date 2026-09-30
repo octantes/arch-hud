@@ -559,10 +559,11 @@ configurenotify(XEvent *e)
 		if (updategeom() || dirty) {
 			drw_resize(drw, sw, bh);
 			updatebars();
-			for (m = mons; m; m = m->next) {
-			for (c = m->clients; c; c = c->next)
-				if (c->isfullscreen && !fakefullscreen)
-					resizeclient(c, m->mx, m->my, m->mw, m->mh);
+for (m = mons; m; m = m->next) {
+				for (c = m->clients; c; c = c->next) {
+					if (c->isfullscreen && !fakefullscreen)
+						resizeclient(c, m->mx, m->my, m->mw, m->mh);
+				}
 				XMoveResizeWindow(dpy, m->barwin, m->wx, m->by, m->ww, bh);
 			}
 			focus(NULL);
@@ -709,7 +710,7 @@ drawbar(Monitor *m)
 		tw = TEXTW(stext) - lrpad + 2; /* 2px right padding */
 		drw_text(drw, m->ww - tw, 0, tw, bh, 0, stext, 0);
 	}
-    
+
     for (i = 0; i < LENGTH(tags); i++) {
         masterclientontag[i] = NULL;
     }
@@ -737,7 +738,7 @@ drawbar(Monitor *m)
 		/* Do not draw vacant tags */
 		if(!(occ & 1 << i || m->tagset[m->seltags] & 1 << i))
 			continue;
-        
+
         if (masterclientontag[i]) {
             snprintf(tagdisp, 64, ptagf, tags[i], masterclientontag[i]);
             XFree(masterclientontag[i]);
@@ -1788,7 +1789,7 @@ tile(Monitor *m)
 				h = (m->wh - ty) / (n - i) - gappx;
 			else
 				h = (m->wh - smh - ty) / (n - i) - gappx;
-			
+
 			if(h < minwsz) {
 				c->isfloating = True;
 				XRaiseWindow(dpy, c->win);
@@ -1798,7 +1799,7 @@ tile(Monitor *m)
 			else {
 				resize(c, m->wx + mw + gappx/ns, m->wy + ty, m->ww - mw - (2*c->bw) - gappx*(5-ns)/2, h - (2*c->bw), False);
 			}
-			
+
 			if(!(nexttiled(c->next)))
 				ty += HEIGHT(c) + smh + gappx;
 			else

@@ -32,7 +32,7 @@ static const Key keys[] = {
 	/* modifier             key           function     argument */
 
 	{ MODKEY,               XK_h,         rotate,      { .i = -1 }                    }, /* change left   */
-    { MODKEY,               XK_j,         movetab,     { .i = -1 }                    }, /* moveto left   */
+	{ MODKEY,               XK_j,         movetab,     { .i = -1 }                    }, /* moveto left   */
 	{ MODKEY,               XK_Tab,       rotate,      { .i =  0 }                    }, /* change nexts  */
 	{ MODKEY,               XK_k,         movetab,     { .i = +1 }                    }, /* moveto right  */
 	{ MODKEY,               XK_l,         rotate,      { .i = +1 }                    }, /* change right  */
@@ -51,6 +51,6 @@ static const Key keys[] = {
 	{ MODKEY,               XK_Return,    fullscreen,  { 0       }                    },
 
 	{ MODKEY,               XK_BackSpace, killclient,  { 0       }                    }, /* kill tab      */
-    
+
 
 };

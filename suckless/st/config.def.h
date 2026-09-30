@@ -22,7 +22,7 @@ static          int    bellvolume         = 0;                                  
                 char  *xdndescchar        = " !\"#$&'()*;<>?[\\]^`{|}~";                     /* drag and drop escape characters (adds \ before any chars specified) */
 
 static const char *colorname[] = {
- 
+
   	           /*  8 normal colors */
 	"#100F0F", /*    BLACK         */
 	"#985954", /*    RED           */

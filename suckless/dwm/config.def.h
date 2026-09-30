@@ -48,13 +48,10 @@ static char               dmenumon[2]    = "0";        /* monitor for dmenu laun
 { MODKEY,                       KEY,      view,           {.ui = 1 << TAG} }, \
 { MODKEY|ShiftMask,             KEY,      tag,            {.ui = 1 << TAG} }, \
 
-#define TABBEDST(prog) { "tabbed", "-c", "-r", "2", "st", "-w", "", "-e", prog, NULL }
-#define GETTABBED(cmd) { "/bin/sh", "-c", "st -w $(xdotool getactivewindow) -e " cmd, NULL }
-
 static const char        *termcmd[]      = { "st",                     NULL };
 static const char        *dmenucmd[]     = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL };
 static const char        *tabtermcmd[]   = { "tabbed", "-c", "-r", "2", "st", "-w", "", NULL };
- 
+
 static const char        *smartnvim[]   = { "smart-tabbed", "nvim",                   NULL };
 static const char        *smartranger[] = { "smart-tabbed", "ranger",                 NULL };
 static const char        *smartterm[]   = { "smart-tabbed", "st",                     NULL };
@@ -76,35 +73,35 @@ static const Key keys[] = {
 
 	/* modifier                     key           function        argument             */
 
-    { MODKEY,                       XK_Escape,    quit,           {0}                  },
-    { MODKEY,                       XK_Tab,       view,           {0}                  },
-	{ MODKEY,                       XK_0,         togglebar,      {0}                  },        
-    { MODKEY,                       XK_BackSpace, killclient,     {0}                  },
+	{ MODKEY,                       XK_Escape,    quit,           {0}                  },
+	{ MODKEY,                       XK_Tab,       view,           {0}                  },
+	{ MODKEY,                       XK_0,         togglebar,      {0}                  },
+	{ MODKEY,                       XK_BackSpace, killclient,     {0}                  },
 	{ MODKEY,                       XK_Return,    spawn,          {.v = tabtermcmd }   },
 
-    { MODKEY,                       XK_q,         spawn,          {.v = smartnvim}     },
-    { MODKEY,                       XK_w,         spawn,          {.v = smartranger}   },
-    { MODKEY,                       XK_e,         spawn,          {.v = smartsurf}     },
-    { MODKEY,                       XK_r,         spawn,          {.v = smartterm}     },
+	{ MODKEY,                       XK_q,         spawn,          {.v = smartnvim}     },
+	{ MODKEY,                       XK_w,         spawn,          {.v = smartranger}   },
+	{ MODKEY,                       XK_e,         spawn,          {.v = smartsurf}     },
+	{ MODKEY,                       XK_r,         spawn,          {.v = smartterm}     },
 
-    { MODKEY,                       XK_a,         setlayout,      {.v = &layouts[0]}   },
+	{ MODKEY,                       XK_a,         setlayout,      {.v = &layouts[0]}   },
 	{ MODKEY,                       XK_s,         setlayout,      {.v = &layouts[1]}   },
 	{ MODKEY,                       XK_d,         setlayout,      {.v = &layouts[2]}   },
-    { MODKEY,                       XK_f,         togglefloating, {0}                  },
-    { MODKEY,                       XK_b,         togglefakefullscreen, {0}              },
-    { MODKEY,                       XK_g,         togglegaps,     {0}                  },
+	{ MODKEY,                       XK_f,         togglefloating, {0}                  },
+	{ MODKEY,                       XK_b,         togglefakefullscreen, {0}              },
+	{ MODKEY,                       XK_g,         togglegaps,     {0}                  },
 
 	{ MODKEY,                       XK_z,         incnmaster,     {.i = -1 }           },
 	{ MODKEY,                       XK_x,         incnmaster,     {.i = +1 }           },
-	{ MODKEY,                       XK_c,         focusstack,     {.i = -1 }           },   
+	{ MODKEY,                       XK_c,         focusstack,     {.i = -1 }           },
 	{ MODKEY,                       XK_v,         focusstack,     {.i = +1 }           },
 
-    { MODKEY,                       XK_less,      zoom,           {0}                  },    
-    { MODKEY,                       XK_p,         spawn,          {.v = dmenucmd   }   },    
+	{ MODKEY,                       XK_less,      zoom,           {0}                  },
+	{ MODKEY,                       XK_p,         spawn,          {.v = dmenucmd   }   },
 
 	{ MODKEY,                       XK_h,         setmfact,       {.f = -0.05}         },
 	{ MODKEY,                       XK_j,         setsmfact,      {.f = -0.05}         },
-	{ MODKEY,                       XK_k,         setsmfact,      {.f = +0.05}         },    
+	{ MODKEY,                       XK_k,         setsmfact,      {.f = +0.05}         },
 	{ MODKEY,                       XK_l,         setmfact,       {.f = +0.05}         },
 
 	{ MODKEY,                       XK_y,         focusmon,       {.i = -1 }           },
